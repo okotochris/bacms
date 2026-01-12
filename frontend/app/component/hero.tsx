@@ -105,13 +105,6 @@ const textVariants: Variants = {
 
               <div className="flex flex-col sm:flex-row gap-5 pt-4">
                 <Link
-                  href="/admissions"
-                  className="inline-flex items-center justify-center px-8 py-5 bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:from-indigo-500 hover:to-purple-600 transition-all duration-300 transform hover:-translate-y-1"
-                >
-                  Start Admission Now →
-                </Link>
-
-                <Link
                   href="/contact"
                   className="inline-flex items-center justify-center px-8 py-5 border-2 border-white/60 text-white rounded-xl font-semibold text-lg backdrop-blur-md hover:bg-white/15 hover:border-white transition-all duration-300"
                 >
