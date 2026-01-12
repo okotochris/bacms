@@ -12,17 +12,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-
 export const metadata: Metadata = {
   title: "BACMS - Bishop Ajayi Crowther Montessori Schools",
   description: "BACMS - Bishop Ajayi Crowther Montessori Schools",
   icons: {
     icon: "/bacms_logo.png",
-    shortcut: "/bacms_logo.png",
-    apple: "/bacms_logo.png",
+    shortcut: "/favicon-32x32.png",
+    apple: "/apple-touch-icon.png",
   },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,7 +28,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-       
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
