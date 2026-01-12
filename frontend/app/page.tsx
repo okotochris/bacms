@@ -8,12 +8,15 @@ import OurClasses from "./component/section";
 
 export default function Home() {
   return (
+    <>
+      <Header />
     <div className="min-h-screen bg-white font-sans">
       
-      <Header />
+    
       <Hero />
       <OurClasses />
       <Footer />
     </div>
+    </>
   );
 }

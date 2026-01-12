@@ -19,11 +19,11 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 p-3.5 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+      <header className="relative top-0 p-3.5 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="container mx-auto px-5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-3">
                 <div className="flex items-center gap-3">
                   <img src="/bacms_logo.png" alt="BACMS Logo" width={70} height={100} />
@@ -32,7 +32,7 @@ export default function Header() {
                     <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
                       BACMS
                     </h1>
-                    <p className="text-xl text-gray-600">Bishob Ajahi Crowther Montessori Schools</p>
+                    <p className="text-xs text-gray-600">Montessori School</p>
                   </div>
                 </div>
               </Link>
@@ -115,7 +115,7 @@ export default function Header() {
         </div>
 
       </header>
-      <div className="h-28"></div>
+     
     </>
   );
 }
