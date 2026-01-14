@@ -10,16 +10,16 @@ import Footer from '../component/footer';
 
 // Sample gallery items – replace src with your real images
 const galleryItems = [
-  { id: 1, src: '/classroom.jpg', alt: 'Montessori classroom activity', category: 'Classes' },
-  { id: 2, src: '/children-playing.jpg', alt: 'Children during play-based learning', category: 'Classes' },
+  { id: 1, src: '/playground1.jpg', alt: 'Montessori classroom activity', category: 'Classes' },
+  { id: 2, src: '/playground.webp', alt: 'Children during play-based learning', category: 'Classes' },
   { id: 3, src: '/lab.jpg', alt: 'Students in science laboratory', category: 'Facilities' },
   { id: 4, src: '/library.jpg', alt: 'Students reading in the library', category: 'Facilities' },
   { id: 5, src: '/playground.jpg', alt: 'Children enjoying the playground', category: 'Facilities' },
-  { id: 6, src: '/lab.jpg', alt: 'ICT & Computer Lab session', category: 'Facilities' },
+  { id: 6, src: '/science_lab.jpg', alt: 'ICT & Computer Lab session', category: 'Facilities' },
   { id: 7, src: '/hero_image.png', alt: 'School award ceremony', category: 'Events' },
-  { id: 8, src: '/sports-day.jpg', alt: 'Sports day activities', category: 'Events' },
-  { id: 9, src: '/graduation.jpg', alt: 'Graduation day celebration', category: 'Events' },
-  { id: 10, src: '/choir-practice.jpg', alt: 'School choir practice', category: 'Activities' },
+  { id: 8, src: '/playground2.jpg', alt: 'Sports day activities', category: 'Events' },
+  { id: 9, src: '/hero.png', alt: 'Graduation day celebration', category: 'Events' },
+  { id: 10, src: '/dancing.jpg', alt: 'School choir practice', category: 'Activities' },
 ];
 
 const categories = ['All', 'Classes', 'Facilities', 'Events', 'Activities'];

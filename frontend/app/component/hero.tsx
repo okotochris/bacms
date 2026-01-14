@@ -92,7 +92,7 @@ const textVariants: Variants = {
               className="space-y-6 md:space-y-8"
             >
               <span className="inline-block px-5 py-2.5 bg-white/15 backdrop-blur-lg rounded-full text-sm md:text-base font-medium border border-white/20 shadow-sm">
-                Christ-Centered • Montessori Excellence
+                Bishob Ajahi Crowther Montessori School
               </span>
 
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight drop-shadow-lg">

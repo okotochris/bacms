@@ -34,7 +34,7 @@ export default function AboutPage() {
       <section className="relative h-[70vh] min-h-[500px] flex items-center bg-gradient-to-r from-indigo-900/70 to-purple-900/70">
         <div className="absolute inset-0">
           <img
-            src="https://mosaicmontessori.ca/wp-content/uploads/2020/05/montesori_students_learning_hero.jpg"
+            src="/schoolbuilding.png"
             alt="Children in joyful learning"
             className="w-full h-full object-cover brightness-75"
           />
