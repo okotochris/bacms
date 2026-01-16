@@ -17,7 +17,7 @@ const galleryItems = [
   { id: 5, src: '/playground.jpg', alt: 'Children enjoying the playground', category: 'Facilities' },
   { id: 6, src: '/science_lab.jpg', alt: 'ICT & Computer Lab session', category: 'Facilities' },
   { id: 7, src: '/hero_image.png', alt: 'School award ceremony', category: 'Events' },
-  { id: 8, src: '/playground2.jpg', alt: 'Sports day activities', category: 'Events' },
+  { id: 8, src: '/playground2.png', alt: 'Sports day activities', category: 'Events' },
   { id: 9, src: '/hero.png', alt: 'Graduation day celebration', category: 'Events' },
   { id: 10, src: '/dancing.jpg', alt: 'School choir practice', category: 'Activities' },
 ];

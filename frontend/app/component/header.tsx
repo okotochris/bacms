@@ -13,13 +13,13 @@ export default function Header() {
 
     { name: 'Gallery', href: '/gallery' },
     { name: 'About', href: '/about' },
-    { name: 'Check Result', href: '/' },
+    { name: 'Check Result', href: '/student_class' },
     { name: 'Contact', href: '/contact' },
   ];
 
   return (
     <>
-      <header className="relative top-0 p-3.5 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+      <header className="fixed top-0 p-3.5 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="container mx-auto px-5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
@@ -115,7 +115,9 @@ export default function Header() {
         </div>
 
       </header>
-     
+     <div className='h-20'>
+
+     </div>
     </>
   );
 }

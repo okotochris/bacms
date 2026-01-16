@@ -132,7 +132,7 @@ export default function ContactPage() {
 
             {/* Big WhatsApp Button */}
             <a
-              href="https://wa.me/2348030000000?text=Hello%20BACMS%2C%20I%20would%20like%20to%20make%20enquiries%20about%20admission..."
+              href="https://wa.me/2348116366225?text=Hello%20BACMS%2C%20I%20would%20like%20to%20make%20enquiries%20about%20admission..."
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full bg-green-600 hover:bg-green-700 text-white text-center py-6 px-8 rounded-xl font-bold text-xl shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3"

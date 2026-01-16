@@ -495,7 +495,7 @@ export default function OurClasses() {
               We expose our students to cutting-edge skills like coding, robotics, and creative problem-solving — keeping them ahead in a digital world.
             </p>
             <div className="mt-6">
-              <img src="https://wpvip.edutopia.org/wp-content/uploads/2022/10/iStock-874565232-crop.jpg?w=2880&quality=85" alt="Students learning robotics" className="rounded-lg shadow-md" />
+              <img src="/extra_activity.png" alt="Students learning robotics" className="rounded-lg shadow-md" />
             </div>
           </div>
         </div>
