@@ -166,7 +166,7 @@ const itemVariants: Variants = {
     opacity: 1,
     x: 0,
     transition: {
-      duration: 1.1,
+      duration: 2.1,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
@@ -348,7 +348,7 @@ export default function OurClasses() {
         </motion.div>
       </div>
     </section>
-    <section className="py-20 md:py-28 bg-gradient-to-b from-white to-gray-50">
+    <section className="py-20 md:py-28 bg-gradient-to-b from-white to-gray-50  overflow-hidden">
       <div className="container mx-auto px-5 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -416,7 +416,7 @@ export default function OurClasses() {
         </motion.div>
       </div>
     </section>
-     <section className="py-24 md:py-32 bg-gradient-to-b from-gray-50 to-white">
+     <section className="py-24 md:py-32 bg-gradient-to-b from-gray-50 to-white  overflow-hidden">
       <div className="container mx-auto px-5 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
