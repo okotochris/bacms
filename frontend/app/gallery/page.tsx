@@ -22,7 +22,7 @@ const galleryItems = [
   { id: 10, src: '/dancing.jpg', alt: 'School choir practice', category: 'Activities' },
   { id: 11, src: '/playingGround.jpeg', alt: 'School Playing Ground', category: 'Activities' },
   { id: 12, src: '/basketBallPractice.jpeg', alt: 'Basketball Practice', category: 'Activities' },
-  { id: 13, src: '/motesorriClass.jpeg', alt: 'Motessori Class', category: 'Activities' },
+  { id: 13, src: '/motesorriClass.jpeg', alt: 'Motessori Class', category: 'Classes' },
 ];
 
 const categories = ['All', 'Classes', 'Facilities', 'Events', 'Activities'];
@@ -122,7 +122,7 @@ export default function GalleryPage() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  className="absolute -top-12 right-0 text-white text-4xl hover:text-gray-300 transition-colors"
+                  className="absolute right-0 bg-red-500 p-2 rounded-full text-white text-4xl hover:text-gray-300 transition-colors"
                   onClick={() => setSelectedImage(null)}
                 >
                   <X size={40} />
