@@ -110,7 +110,7 @@ const classes = [
     description: 'Strong foundation in literacy & numeracy • Character education • Creative arts • Introduction to British & Nigerian curriculum',
     gradient: 'from-blue-400/30 to-blue-600/10',
     textColor: 'text-blue-700',
-    imagePlaceholder: '/nursery2.png',
+    imagePlaceholder: '/primary.jpeg',
     color: 'black',
     bcolor: "white"
   },

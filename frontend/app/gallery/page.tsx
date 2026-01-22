@@ -20,6 +20,9 @@ const galleryItems = [
   { id: 8, src: '/playground2.png', alt: 'Sports day activities', category: 'Events' },
   { id: 9, src: '/hero.png', alt: 'Graduation day celebration', category: 'Events' },
   { id: 10, src: '/dancing.jpg', alt: 'School choir practice', category: 'Activities' },
+  { id: 11, src: '/playingGround.jpeg', alt: 'School Playing Ground', category: 'Activities' },
+  { id: 12, src: '/basketBallPractice.jpeg', alt: 'Basketball Practice', category: 'Activities' },
+  { id: 13, src: '/motesorriClass.jpeg', alt: 'Motessori Class', category: 'Activities' },
 ];
 
 const categories = ['All', 'Classes', 'Facilities', 'Events', 'Activities'];
