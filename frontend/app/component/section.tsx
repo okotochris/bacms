@@ -430,7 +430,7 @@ export default function OurClasses() {
             Why Parents Trust BACMS
           </h2>
           <p className="text-xl text-gray-700 leading-relaxed">
-            At Bishop Ajayi Crowther Montessori Schools, we don't just teach — we inspire, nurture, and empower every child to become confident, compassionate leaders of tomorrow.
+            At Bishop Ajayi Crowther Montessori Schools, we don&apos;t just teach — we inspire, nurture, and empower every child to become confident, compassionate leaders of tomorrow.
           </p>
         </motion.div>
 
@@ -478,7 +478,7 @@ export default function OurClasses() {
               Awards & Recognition
             </h3>
             <p className="text-gray-700">
-              Our students and school have received numerous accolades — proof of our consistent excellence in education across Benin City and beyond.
+              Our students and school have received numerous accolades — proof of our consistent excellence in education across Benin City Edo state and beyond.
             </p>
             {/* Award images carousel */}
             {/* <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
