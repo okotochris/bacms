@@ -481,10 +481,10 @@ export default function OurClasses() {
               Our students and school have received numerous accolades — proof of our consistent excellence in education across Benin City and beyond.
             </p>
             {/* Award images carousel */}
-            <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
+            {/* <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
               <img src="https://honeylandschools.ng/wp-content/uploads/2025/10/Jury-Assessment-1_page-0019.jpg" alt="Students receiving awards" className="h-40 rounded-lg object-cover flex-shrink-0" />
                <img src="https://honeylandschools.ng/wp-content/uploads/2025/10/Jury-Assessment-1_page-0019.jpg" alt="Students receiving awards" className="h-40 rounded-lg object-cover flex-shrink-0" />
-            </div>
+            </div> */}
           </div>
 
           <div className="bg-green-50 rounded-2xl p-8 shadow-md">

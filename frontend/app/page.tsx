@@ -10,9 +10,7 @@ export default function Home() {
   return (
     <>
       <Header />
-    <div className="min-h-screen bg-white font-sans">
-      
-    
+      <div className="min-h-screen bg-white font-sans">
       <Hero />
       <OurClasses />
       <Footer />
