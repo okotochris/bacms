@@ -14,6 +14,7 @@ export default function Header() {
     { name: 'Gallery', href: '/gallery' },
     { name: 'About', href: '/about' },
     { name: 'Check Result', href: '/student_class' },
+    { name: 'Login', href: '/login' },
     { name: 'Contact', href: '/contact' },
   ];
 
@@ -94,7 +95,7 @@ export default function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-white p-2 bg-blue-700 hover:text-primary-600 font-medium transition-colors duration-200 text-base"
+                  className="text-white p-2 bg-blue-700 hover:text-primary-600 font-medium transition-colors duration-200 text-base rounded"
                   onClick={() => setIsOpen(false)}
                 >
                   {item.name}
