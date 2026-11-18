@@ -1,98 +1,103 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   Plus,
   Users,
   UserCheck,
   UserX,
-  MoreHorizontal,
   Eye,
-  Pencil,
-  X,
   Filter,
+  Trash,
+  Edit,
 } from "lucide-react";
 import Navigation from "../component/navigation";
 import Header from "../component/header";
 
 
 
+
 type Student = {
-  id: number;
-  name: string;
+  _id: number;
+  fullname: string;
   admissionNo: string;
   className: string;
   gender: string;
   email: string;
+  studentId: string;
+  profileImage: File | null
   status: "Active" | "Inactive";
 };
 
-const initialStudents: Student[] = [
-  {
-    id: 1,
-    name: "John Adebayo",
-    admissionNo: "STU001",
-    className: "JSS 1",
-    gender: "Male",
-    email: "john@example.com",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Grace Okafor",
-    admissionNo: "STU002",
-    className: "SSS 2",
-    gender: "Female",
-    email: "grace@example.com",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "David Eze",
-    admissionNo: "STU003",
-    className: "JSS 3",
-    gender: "Male",
-    email: "david@example.com",
-    status: "Inactive",
-  },
-  {
-    id: 4,
-    name: "Mary Johnson",
-    admissionNo: "STU004",
-    className: "SSS 1",
-    gender: "Female",
-    email: "mary@example.com",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Samuel James",
-    admissionNo: "STU005",
-    className: "JSS 2",
-    gender: "Male",
-    email: "samuel@example.com",
-    status: "Active",
-  },
-];
 
 export default function StudentsPage() {
-  const [students, setStudents] = useState(initialStudents);
+  const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [active, setActive] = useState("Students");
-
-  const [form, setForm] = useState({
-    name: "",
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [showBox, setShowBox] = useState(false)
+    const [form, setForm] = useState<{
+      fullname: string;
+      admissionNo: string;
+      className: string;
+      gender: string;
+      email: string;
+      studentId: string;
+      profileImage: File | null;
+    }>({
+    fullname: "",
     admissionNo: "",
     className: "JSS 1",
     gender: "Male",
     email: "",
+    studentId: "",
+    profileImage: null
   });
+
+  useEffect(()=>{
+    async function getStudent(){
+      try{ 
+        const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/student`)
+        const {message, data} = await result.json()
+        if(!result){
+          setMessage(message)
+          return
+        }
+        setStudents(data)
+        setShowBox(true)
+      }catch(err){
+        setMessage("server error")
+        setShowBox(true)
+        console.log(err)
+      }finally{
+        setLoading(false)
+         generateRandomValue()
+      }
+    }
+
+    getStudent()
+  }, [])
+
+   
+  
+function generateRandomValue() {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    const letterCode = Array.from({ length: 3 }, () => {
+      return letters[Math.floor(Math.random() * letters.length)];
+    }).join('');
+
+    const fourValue = Math.floor(1000 + Math.random() * 9000);
+    setForm((prev) => ({ ...prev, studentId: `BAC${fourValue}${letterCode}` }));
+    return `BAC${fourValue}${letterCode}`;
+  }
 
   const activeCount = students.filter(
     (student) => student.status === "Active"
@@ -104,7 +109,7 @@ export default function StudentsPage() {
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
-      student.name.toLowerCase().includes(search.toLowerCase()) ||
+      student?.fullname?.toLowerCase().includes(search.toLowerCase()) ||
       student.admissionNo.toLowerCase().includes(search.toLowerCase());
 
     const matchesClass =
@@ -116,26 +121,53 @@ export default function StudentsPage() {
     return matchesSearch && matchesClass && matchesStatus;
   });
 
-  const addStudent = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const addStudent = async(e: React.FormEvent<HTMLFormElement>) => {
+    const formData = new FormData();
 
-    const newStudent: Student = {
-      id: Date.now(),
-      ...form,
-      status: "Active",
-    };
+      formData.append("fullname", form.fullname);
+      formData.append("admissionNo", form.admissionNo);
+      formData.append("className", form.className);
+      formData.append("gender", form.gender);
+      formData.append("email", form.email);
+      formData.append("studentId", form.studentId);
+      if (form.profileImage) {
+        formData.append("profileImage", form.profileImage);
+      }
+   try{
+    setLoading(true)
+     e.preventDefault();
+    const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/student`, {
+      method:"POST",
+      body:formData
+    })
+    const {message, student} = await result.json()
+    if(!result.ok){
+      setShowBox(true)
+      setMessage(message)
+      return
+    }
 
-    setStudents((prev) => [newStudent, ...prev]);
+    setStudents((prev) => [student, ...prev]);
 
     setForm({
-      name: "",
+      fullname: "",
       admissionNo: "",
       className: "JSS 1",
       gender: "Male",
       email: "",
+      profileImage:null,
+      studentId: ""
     });
 
     setShowModal(false);
+   }catch(err){
+    setMessage('server error')
+    console.log(err)
+    setShowBox(true)
+   }finally{
+    setLoading(false)
+     generateRandomValue()
+   }
   };
 
   return (
@@ -271,23 +303,23 @@ export default function StudentsPage() {
               </thead>
 
               <tbody className="divide-y divide-gray-100">
-                {filteredStudents.map((student) => (
+                {filteredStudents && filteredStudents.map((student) => (
                   <tr
-                    key={student.id}
+                    key={student._id}
                     className="hover:bg-gray-50 transition"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
-                          {student.name.charAt(0)}
+                          {student.fullname.charAt(0)}
                         </div>
 
                         <div>
                           <p className="font-semibold text-gray-800 text-sm">
-                            {student.name}
+                            {student.fullname}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {student.email}
+                            {student.studentId}
                           </p>
                         </div>
                       </div>
@@ -322,7 +354,7 @@ export default function StudentsPage() {
                           title="View student"
                           className="hover:text-indigo-600"
                           onClick={() =>
-                            alert(`Viewing ${student.name}`)
+                            alert(`Viewing ${student.fullname}`)
                           }
                         >
                           <Eye size={18} />
@@ -332,17 +364,17 @@ export default function StudentsPage() {
                           title="Edit student"
                           className="hover:text-indigo-600"
                           onClick={() =>
-                            alert(`Editing ${student.name}`)
+                            alert(`Editing ${student.fullname}`)
                           }
                         >
-                          <Pencil size={18} />
+                          <Edit size={18} />
                         </button>
 
                         <button
                           title="More options"
                           className="hover:text-gray-700"
                         >
-                          <MoreHorizontal size={19} />
+                          <Trash className="text-red-500" size={19} />
                         </button>
                       </div>
                     </td>
@@ -372,25 +404,6 @@ export default function StudentsPage() {
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
 
             <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl">
-
-              <div className="flex items-center justify-between p-6 border-b">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">
-                    Add New Student
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Enter the student&apos;s information.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
               <form onSubmit={addStudent} className="p-6 space-y-4">
 
                 <div>
@@ -399,9 +412,9 @@ export default function StudentsPage() {
                   </label>
                   <input
                     required
-                    value={form.name}
+                    value={form.fullname}
                     onChange={(e) =>
-                      setForm({ ...form, name: e.target.value })
+                      setForm({ ...form, fullname: e.target.value })
                     }
                     placeholder="Enter full name"
                     className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
@@ -435,12 +448,13 @@ export default function StudentsPage() {
                       }
                       className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none"
                     >
-                      <option>JSS 1</option>
-                      <option>JSS 2</option>
-                      <option>JSS 3</option>
-                      <option>SSS 1</option>
-                      <option>SSS 2</option>
-                      <option>SSS 3</option>
+                     {[
+                        'SS 3', 'SS 2', 'SS 1', 'JSS 3', 'JSS 2', 'JSS 1',
+                        'BASIC 6', 'BASIC 5', 'BASIC 4', 'BASIC 3', 'BASIC 2', 'BASIC 1',
+                        'NUSERY 3', 'NURSERY 2', 'NURSERY 1', 'PRE NURSERY'
+                      ].map((item, i)=>(
+                        <option key={i}>{item}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -463,18 +477,24 @@ export default function StudentsPage() {
 
                 <div>
                   <label className="text-sm font-medium text-gray-700">
-                    Email Address
+                    Student ID
                   </label>
                   <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm({ ...form, email: e.target.value })
-                    }
-                    placeholder="student@example.com"
+                    type="text"
+                    value={form.studentId}
+                    readOnly
                     className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
                   />
                 </div>
+                <div>
+                  <input
+                    type="file"
+                    accept="image/png, image/jpg, image/jpeg"
+                    onChange={(e)=>setForm({...form, profileImage:e.target.files?.[0] ?? null})}
+                    className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
+                  />
+                </div>
+
 
                 <div className="flex justify-end gap-3 pt-4">
                   <button
@@ -489,7 +509,7 @@ export default function StudentsPage() {
                     type="submit"
                     className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium"
                   >
-                    Save Student
+                    {loading ? "Adding..." : "Add Student"}
                   </button>
                 </div>
 

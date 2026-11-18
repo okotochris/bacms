@@ -2,8 +2,10 @@
 
 import { Bell, ChevronDown, Menu, Search } from "lucide-react"
 
+
 export default function Header({ active, setSidebarOpen }: { active: string; setSidebarOpen: (open: boolean) => void }) {
-    return (
+ 
+  return (
         <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-slate-100 bg-white/90 px-5 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden">

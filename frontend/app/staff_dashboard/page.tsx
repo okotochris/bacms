@@ -1,53 +1,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navigation from "./component/navigation";
 import Header from "./component/header";
 import { ArrowUpRight, CalendarDays, ChartNoAxesCombined, ChevronDown, CreditCard, FileText, MoreHorizontal, Plus, Receipt, Users, Wallet } from "lucide-react";
 
 
-const stats = [
-  {
-    title: "Total Students",
-    value: "1,248",
-    change: "+12.5%",
-    positive: true,
-    icon: Users,
-    color: "bg-blue-50 text-blue-600",
-  },
-  {
-    title: "Total Revenue",
-    value: "₦24.8M",
-    change: "+8.2%",
-    positive: true,
-    icon: Wallet,
-    color: "bg-emerald-50 text-emerald-600",
-  },
-  {
-    title: "Outstanding Fees",
-    value: "₦3.2M",
-    change: "-4.3%",
-    positive: true,
-    icon: CreditCard,
-    color: "bg-orange-50 text-orange-600",
-  },
-  {
-    title: "Results Published",
-    value: "86%",
-    change: "+5.4%",
-    positive: true,
-    icon: FileText,
-    color: "bg-purple-50 text-purple-600",
-  },
-];
-
-const payments = [
-  { name: "David Johnson", id: "STU-2024-001", class: "JSS 2A", amount: "₦85,000", date: "Nov 12, 2026", status: "Paid" },
-  { name: "Sarah Williams", id: "STU-2024-014", class: "SSS 1B", amount: "₦60,000", date: "Nov 12, 2026", status: "Pending" },
-  { name: "Michael James", id: "STU-2024-029", class: "JSS 3A", amount: "₦85,000", date: "Nov 11, 2026", status: "Paid" },
-  { name: "Grace Emmanuel", id: "STU-2024-035", class: "SSS 2A", amount: "₦120,000", date: "Nov 10, 2026", status: "Paid" },
-];
 
 const activities = [
   { title: "New student registered", description: "John Samuel - JSS 1A", time: "10 minutes ago", color: "bg-blue-500" },
@@ -56,11 +15,92 @@ const activities = [
   { title: "New examination created", description: "First Term Examination", time: "Yesterday", color: "bg-orange-500" },
 ];
 
+type Payment = {
+  id: string;
+  name: string;
+  amount: string;
+  status: string;
+  createdAt: string;
+  studentClass: string;
+  outstandingFees:number;
+};
+type Student = {
+  id: string;
+  name: string;
+  class: string;
+  outstandingFees: number;
+};
+
 
 export default function Dashboard() {
   const [active, setActive] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [results, setResults] = useState([]);
+  const [student, setStudent] = useState<Student[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  
+  useEffect(() => {
+    async function getDashboardDetails(){
+        try{
+            setLoading(true)
+            const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/dashboard`)
+            if(!result.ok){
+                setMessage('somthing went wrong try again')
+                return
+            }
+            const {students, payments, results, message} = await result.json()
+            setStudent(students)
+            setPayments(payments)
+            setResults(results)
+            setMessage(message)
+        }catch(err){
+            console.log(err)
+        }finally{
+            setLoading(false)
+        }
+    }
+    getDashboardDetails()
+  }, [])
 
+  //CALCULATE TOTAL REVENUE AND OUTSTANDING FEES
+  const totalRevenue = payments.reduce((acc, payment) => acc + parseFloat(payment.amount.replace(/[^0-9.-]+/g,"")), 0);
+  const outstandingFees = student.reduce((acc, student) => acc + Number(student.outstandingFees || 0), 0);
+  const stats = [
+  {
+    title: "Total Students",
+    value: student.length,
+    change: "+12.5%",
+    positive: true,
+    icon: Users,
+    color: "bg-blue-50 text-blue-600",
+  },
+  {
+    title: "Total Revenue",
+    value: `₦${totalRevenue.toLocaleString()}`,
+    change: "+8.2%",
+    positive: true,
+    icon: Wallet,
+    color: "bg-emerald-50 text-emerald-600",
+  },
+  {
+    title: "Outstanding Fees",
+    value: `₦${outstandingFees.toLocaleString()}`,
+    change: "-4.3%",
+    positive: true,
+    icon: CreditCard,
+    color: "bg-orange-50 text-orange-600",
+  },
+  {
+    title: "Results Published",
+    value: results.length,
+    change: "+5.4%",
+    positive: true,
+    icon: FileText,
+    color: "bg-purple-50 text-purple-600",
+  },
+];
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
       <Navigation
@@ -70,7 +110,7 @@ export default function Dashboard() {
         setSidebarOpen={setSidebarOpen}
       />
 
-      <main className="min-h-screen lg:ml-[260px]">
+      <main className="min-h -screen lg:ml-[260px]">
         <Header
           active={active}
           setSidebarOpen={setSidebarOpen}
@@ -140,7 +180,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-7 flex items-end gap-3">
-                <h3 className="text-3xl font-bold text-slate-900">₦24,800,000</h3>
+                <h3 className="text-3xl font-bold text-slate-900">{totalRevenue.toLocaleString()}</h3>
                 <span className="mb-1 text-xs font-semibold text-emerald-600">+8.2%</span>
               </div>
 
@@ -206,14 +246,16 @@ export default function Dashboard() {
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[
-                { title: "Enter Results", desc: "Record student scores", icon: FileText, color: "bg-purple-50 text-purple-600" },
-                { title: "Record Payment", desc: "Add school fee payment", icon: CreditCard, color: "bg-emerald-50 text-emerald-600" },
-                { title: "Generate Report", desc: "Print student report cards", icon: ChartNoAxesCombined, color: "bg-blue-50 text-blue-600" },
-                { title: "Fee Structure", desc: "Manage school fees", icon: Receipt, color: "bg-orange-50 text-orange-600" },
+                { title: "Enter Results", desc: "Record student scores", icon: FileText, color: "bg-purple-50 text-purple-600", url: "/staff_dashboard/results" },
+                { title: "Record Payment", desc: "Add school fee payment", icon: CreditCard, color: "bg-emerald-50 text-emerald-600", url: "/staff_dashboard/record_payment" },
+                { title: "Generate Report", desc: "Print student report cards", icon: ChartNoAxesCombined, color: "bg-blue-50 text-blue-600", url: "/staff_dashboard/generate_report" },
+                { title: "Fee Structure", desc: "Manage school fees", icon: Receipt, color: "bg-orange-50 text-orange-600", url: "/staff_dashboard/fee-structure" },
               ].map((action) => {
                 const Icon = action.icon;
                 return (
-                  <button key={action.title} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+                  <button 
+                    onClick={() => window.location.href = action.url}
+                    key={action.title} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
                     <div className={`rounded-xl p-3 ${action.color}`}>
                       <Icon size={20} />
                     </div>
@@ -254,9 +296,9 @@ export default function Dashboard() {
                           <p className="text-xs font-semibold text-slate-800">{payment.name}</p>
                           <p className="mt-1 text-[10px] text-slate-400">{payment.id}</p>
                         </td>
-                        <td className="px-5 py-4 text-xs text-slate-500">{payment.class}</td>
+                        <td className="px-5 py-4 text-xs text-slate-500">{payment.studentClass}</td>
                         <td className="px-5 py-4 text-xs font-semibold text-slate-800">{payment.amount}</td>
-                        <td className="px-5 py-4 text-xs text-slate-500">{payment.date}</td>
+                        <td className="px-5 py-4 text-xs text-slate-500">{payment.createdAt}</td>
                         <td className="px-5 py-4">
                           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                             payment.status === "Paid"

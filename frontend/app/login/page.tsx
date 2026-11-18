@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
+const API = process.env.NEXT_PUBLIC_URL
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function LoginPage() {
       setLoading(true);
 
       // Connect this section to your authentication API.
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`${API}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,9 +55,11 @@ export default function LoginPage() {
       if (!response.ok) {
         throw new Error(data.message || "Invalid email or password.");
       }
-
+      const { token, user } = data;
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("user", JSON.stringify(user));
       // Redirect only after successful authentication.
-      router.push("/dashboard");
+      router.push("/staff_dashboard");
       router.refresh();
     } catch (err) {
       setError(

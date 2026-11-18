@@ -36,7 +36,7 @@ function Header() {
         },
         {
             name: 'Check Result',
-            href: '/student_class'
+            href: '/student/login'
         },
         {
             name: 'Login',

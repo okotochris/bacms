@@ -1,98 +1,59 @@
 
 "use client";
 
-import { useState, type FormEvent } from "react";
-
-
-import {
-  Plus,
-  Search,
-  Users,
-  UserCheck,
-  UserX,
-  X,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import {Plus, Search, Users, UserCheck, UserX, Pencil, Trash2, Eye, } from "lucide-react";
 import Header from "../component/header";
 import Navigation from "../component/navigation";
 
 type Teacher = {
-  id: number;
-  name: string;
+  _id: number;
+  fullname: string;
   employeeNo: string;
   email: string;
   phone: string;
   department: string;
   assignedClass: string;
+  role:string,
+  password:string,
   status: "Active" | "Inactive";
 };
 
-const initialTeachers: Teacher[] = [
-  {
-    id: 1,
-    name: "James Okoro",
-    employeeNo: "TCH001",
-    email: "james@example.com",
-    phone: "08012345678",
-    department: "Sciences",
-    assignedClass: "JSS 1",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Grace Williams",
-    employeeNo: "TCH002",
-    email: "grace@example.com",
-    phone: "08023456789",
-    department: "Languages",
-    assignedClass: "JSS 2",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "David Eze",
-    employeeNo: "TCH003",
-    email: "david@example.com",
-    phone: "08034567890",
-    department: "Sciences",
-    assignedClass: "SSS 1",
-    status: "Inactive",
-  },
-  {
-    id: 4,
-    name: "Mary Johnson",
-    employeeNo: "TCH004",
-    email: "mary@example.com",
-    phone: "08045678901",
-    department: "Arts",
-    assignedClass: "SSS 2",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Samuel James",
-    employeeNo: "TCH005",
-    email: "samuel@example.com",
-    phone: "08056789012",
-    department: "Commercial",
-    assignedClass: "SSS 3",
-    status: "Active",
-  },
-];
+
 
 const emptyForm = {
-  name: "",
+  fullname: "",
   employeeNo: "",
   email: "",
   phone: "",
   department: "Sciences",
   assignedClass: "JSS 1",
+  role:'',
+  password:'',
   status: "Active" as "Active" | "Inactive",
 };
 
+const studentClasses = [
+  "SSS 3",
+  "SSS 2",
+  "SSS 1",
+  "JSS 3",
+  "JSS 2",
+  "JSS 1",
+  "BASIC 6",
+  "BASIC 5",
+  "BASIC 4",
+  "BASIC 3",
+  "BASIC 2",
+  "BASIC 1",
+  "NURSERY 3",
+  "NURSERY 2",
+  "NURSERY 1",
+  "PRE NURSERY"
+ 
+]
 export default function TeachersPage() {
-  const [teachers, setTeachers] = useState(initialTeachers);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
 
   const [active, setActive] = useState("Teachers");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -100,23 +61,42 @@ export default function TeachersPage() {
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-
+  const [message, setMessage] = useState('')
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  const activeCount = teachers.filter(
+  useEffect(()=>{
+    async function getTeacher(){
+      try{
+        const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/teacher`)
+        const {message, teacher} = await result.json()
+        if(!result.ok){
+          setMessage(message)
+          return
+        }
+        setTeachers(teacher)
+      }catch(err){
+        console.log(err)
+      }finally{
+        setLoading(false)
+      }
+    }
+    getTeacher()
+  }, [])
+
+  const activeCount = teachers?.filter(
     (teacher) => teacher.status === "Active"
-  ).length;
+  ).length || 0;
 
-  const inactiveCount = teachers.filter(
+  const inactiveCount = teachers?.filter(
     (teacher) => teacher.status === "Inactive"
-  ).length;
+  ).length || 0;
 
-  const filteredTeachers = teachers.filter((teacher) => {
+  const filteredTeachers = teachers?.filter((teacher) => {
     const matchesSearch =
-      teacher.name.toLowerCase().includes(search.toLowerCase()) ||
+      teacher.fullname.toLowerCase().includes(search.toLowerCase()) ||
       teacher.employeeNo.toLowerCase().includes(search.toLowerCase()) ||
       teacher.email.toLowerCase().includes(search.toLowerCase());
 
@@ -132,58 +112,57 @@ export default function TeachersPage() {
   });
 
   function openAddModal() {
-    setEditingId(null);
     setForm(emptyForm);
     setShowModal(true);
   }
 
-  function openEditModal(teacher: Teacher) {
-    setEditingId(teacher.id);
 
-    setForm({
-      name: teacher.name,
-      employeeNo: teacher.employeeNo,
-      email: teacher.email,
-      phone: teacher.phone,
-      department: teacher.department,
-      assignedClass: teacher.assignedClass,
-      status: teacher.status,
-    });
 
-    setShowModal(true);
-  }
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    if (editingId !== null) {
-      setTeachers((prev) =>
-        prev.map((teacher) =>
-          teacher.id === editingId
-            ? { ...teacher, ...form }
-            : teacher
-        )
-      );
-    } else {
+    try{
+       const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/teacher`, {
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(form)
+       })
+       if(!result.ok){
+        setMessage("unable to create teacher try agian later")
+        return
+       }
+       const {teacher} = await result.json()
       setTeachers((prev) => [
         ...prev,
-        {
-          id: Date.now(),
-          ...form,
-        },
+       teacher
       ]);
-    }
 
     setShowModal(false);
-    setEditingId(null);
     setForm(emptyForm);
+    }catch(err){
+      setMessage('server error')
+      console.log(err)
+    }finally{
+      setLoading(false)
+    }
   }
 
-  function deleteTeacher(id: number) {
-    if (confirm("Are you sure you want to delete this teacher?")) {
+  async function deleteTeacher(_id: number) {
+    try{
+      if (confirm("Are you sure you want to delete this teacher?")) {
+      const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/teacher/${_id}`, {
+        method:"Delete"
+       })
+       if(!result.ok){
+        setMessage('unable to delete try later')
+        return
+       }
       setTeachers((prev) =>
-        prev.filter((teacher) => teacher.id !== id)
+        prev.filter((teacher) => teacher._id !== _id)
       );
+    }
+    }catch(err){
+      setMessage('sever error')
+      console.log(err)
     }
   }
 
@@ -235,7 +214,7 @@ export default function TeachersPage() {
 
             <StatCard
               title="Total Teachers"
-              value={teachers.length}
+              value={teachers ? teachers.length : 0}
               icon={<Users size={22} />}
               color="bg-indigo-100 text-indigo-600"
             />
@@ -302,6 +281,7 @@ export default function TeachersPage() {
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                   </select>
+                  
 
                 </div>
               </div>
@@ -324,9 +304,9 @@ export default function TeachersPage() {
 
                 <tbody className="divide-y divide-gray-100">
 
-                  {filteredTeachers.map((teacher) => (
+                  {filteredTeachers?.map((teacher) => (
                     <tr
-                      key={teacher.id}
+                      key={teacher._id}
                       className="hover:bg-gray-50 transition"
                     >
 
@@ -334,12 +314,12 @@ export default function TeachersPage() {
                         <div className="flex items-center gap-3">
 
                           <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold">
-                            {teacher.name.charAt(0)}
+                            {teacher.fullname.charAt(0)}
                           </div>
 
                           <div>
                             <p className="font-semibold text-gray-800 text-sm">
-                              {teacher.name}
+                              {teacher.fullname}
                             </p>
 
                             <p className="text-xs text-gray-500">
@@ -351,7 +331,7 @@ export default function TeachersPage() {
                       </td>
 
                       <td className="px-6 py-4 text-sm text-gray-600">
-                        {teacher.employeeNo}
+                        {teacher.employeeNo}.{teacher.role}
                       </td>
 
                       <td className="px-6 py-4 text-sm text-gray-600">
@@ -376,18 +356,9 @@ export default function TeachersPage() {
 
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-
-                          <button
-                            title="Edit teacher"
-                            onClick={() => openEditModal(teacher)}
-                            className="text-indigo-600 hover:text-indigo-800"
-                          >
-                            <Pencil size={18} />
-                          </button>
-
                           <button
                             title="Delete teacher"
-                            onClick={() => deleteTeacher(teacher.id)}
+                            onClick={() => deleteTeacher(teacher._id)}
                             className="text-red-500 hover:text-red-700"
                           >
                             <Trash2 size={18} />
@@ -399,7 +370,7 @@ export default function TeachersPage() {
                     </tr>
                   ))}
 
-                  {filteredTeachers.length === 0 && (
+                  {filteredTeachers?.length === 0 && (
                     <tr>
                       <td
                         colSpan={6}
@@ -415,7 +386,7 @@ export default function TeachersPage() {
             </div>
 
             <div className="p-5 border-t border-gray-100 text-sm text-gray-500">
-              Showing {filteredTeachers.length} of {teachers.length} teachers
+              Showing {filteredTeachers?.length} of {teachers?.length} teachers
             </div>
 
           </div>
@@ -426,25 +397,6 @@ export default function TeachersPage() {
 
               <div className="bg-white rounded-2xl w-full max-w-xl shadow-xl max-h-[90vh] overflow-y-auto">
 
-                <div className="flex items-center justify-between p-6 border-b">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800">
-                      {editingId !== null ? "Edit Teacher" : "Add New Teacher"}
-                    </h3>
-
-                    <p className="text-sm text-gray-500 mt-1">
-                      Enter the teacher&apos;s information below.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
                   <div>
@@ -454,9 +406,9 @@ export default function TeachersPage() {
 
                     <input
                       required
-                      value={form.name}
+                      value={form.fullname}
                       onChange={(e) =>
-                        setForm({ ...form, name: e.target.value })
+                        setForm({ ...form, fullname: e.target.value })
                       }
                       placeholder="Enter teacher's full name"
                       className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
@@ -551,37 +503,49 @@ export default function TeachersPage() {
                         }
                         className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none"
                       >
-                        <option>JSS 1</option>
-                        <option>JSS 2</option>
-                        <option>JSS 3</option>
-                        <option>SSS 1</option>
-                        <option>SSS 2</option>
-                        <option>SSS 3</option>
+                        {studentClasses.map((studentClass) => (
+                          <option key={studentClass} value={studentClass}>
+                            {studentClass}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
                   </div>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        Role
+                      </label>
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Employment Status
-                    </label>
+                      <select
+                        value={form.assignedClass}
+                        onChange={(e) =>
+                          setForm({ ...form, role: e.target.value })
+                        }
+                        className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none"
+                      >
+                        <option value="">Select Role </option>
+                        <option value="admin">Admin</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="staff">Staff</option>
+                       
+                      </select>
+                    </div>
+                     <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        Password
+                      </label>
+                      <div className="flex items-center justify-center mt-2 p-3 border  border-gray-200 rounded-xl ">
+                        <input type={isPasswordVisible ? "text" : "password"} 
+                        onChange={(e)=>setForm({...form, password:e.target.value})}
+                         className="w-full  borderoutline-none outline-0"
+                      />
+                      <Eye onClick={()=>isPasswordVisible ? setIsPasswordVisible(false): setIsPasswordVisible(true)}/>
+                      </div>
+                    </div>
 
-                    <select
-                      value={form.status}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          status: e.target.value as "Active" | "Inactive",
-                        })
-                      }
-                      className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
                   </div>
-
                   <div className="flex justify-end gap-3 pt-4">
 
                     <button
@@ -596,7 +560,7 @@ export default function TeachersPage() {
                       type="submit"
                       className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium"
                     >
-                      {editingId !== null ? "Update Teacher" : "Save Teacher"}
+                      {loading ? "Saving..... " : "Save Teacher"}
                     </button>
 
                   </div>

@@ -16,7 +16,12 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
+type Staff = {
+  fullname:string,
+}
 type NavigationProps = {
   active: string;
   setActive: (value: string) => void;
@@ -24,12 +29,21 @@ type NavigationProps = {
   setSidebarOpen: (value: boolean) => void;
 };
 
-export default function Navigation({
-  active,
-  setActive,
-  sidebarOpen,
-  setSidebarOpen,
-}: NavigationProps) {
+export default function Navigation({active, setActive, sidebarOpen, setSidebarOpen,}: NavigationProps) {
+   const [user, setUser] = useState<Staff | null>(null);
+    const router = useRouter();
+    useEffect(()=>{
+     async function getUser(){
+       const savedUser = sessionStorage.getItem('user');
+      if(!savedUser){
+        router.push('/login')
+        return;
+      }
+      const user = JSON.parse(savedUser);
+      setUser(user)
+     }
+     getUser()
+    }, []) 
   const navGroups = [
     {
       label: "MAIN MENU",
@@ -80,10 +94,10 @@ export default function Navigation({
 
           <div>
             <h1 className="text-lg font-bold text-slate-900">
-              EduManage
+              {user?.fullname.split(' ')[0] || 'User'}
             </h1>
             <p className="text-[11px] text-slate-400">
-              SCHOOL PORTAL
+              welcome to School portal
             </p>
           </div>
 

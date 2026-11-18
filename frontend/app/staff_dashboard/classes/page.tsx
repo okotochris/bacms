@@ -1,61 +1,75 @@
 
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import {Plus, Search, BookOpen, Layers, Users, X, Pencil, Trash2} from "lucide-react";
 import Header from "../component/header";
 import Navigation from "../component/navigation";
 
 type Subject = {
-  id: number;
-  name: string;
+  _id: number;
+  subjectName: string;
   code: string;
   classes: string[];
   teacher: string;
 };
 
-const initialSubjects: Subject[] = [
-  { id: 1, name: "Mathematics", code: "MTH101", classes: ["JSS 1", "JSS 2", "SSS 1"], teacher: "Mr. James" },
-  { id: 2, name: "English Language", code: "ENG101", classes: ["JSS 1", "JSS 2", "JSS 3"], teacher: "Mrs. Grace" },
-  { id: 3, name: "Basic Science", code: "BSC101", classes: ["JSS 1", "JSS 2"], teacher: "Mr. David" },
-  { id: 4, name: "Computer Studies", code: "CST101", classes: ["JSS 1", "SSS 1"], teacher: "Mrs. Mary" },
-  { id: 5, name: "Physics", code: "PHY101", classes: ["SSS 1", "SSS 2", "SSS 3"], teacher: "Mr. Samuel" },
-  { id: 6, name: "Chemistry", code: "CHM101", classes: ["SSS 1", "SSS 2", "SSS 3"], teacher: "Mrs. Esther" },
-];
+
 
 const availableClasses = [
-  "JSS 1",
-  "JSS 2",
-  "JSS 3",
-  "SSS 1",
-  "SSS 2",
-  "SSS 3",
+  "SSS 3", "SSS 2", "SSS 1",
+  "JSS 3", "JSS 2", "JSS 1",
+  'BASIC 6', 'BASIC 5', 'BASIC 4', 'BASIC 3', 'BASIC 2', 'BASIC 1',
+  'NURSERY 3', 'NURSERY 2', 'NURSERY 1', 'PRE NURSERY'
 ];
 
 export default function SubjectsPage() {
-  const [subjects, setSubjects] = useState(initialSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [active, setActive] = useState("Subjects");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const [form, setForm] = useState({
-    name: "",
+    subjectName: "",
     code: "",
     teacher: "",
     classes: [] as string[],
   });
 
-  const totalAssignments = subjects.reduce(
+  useEffect(()=>{
+    async function getSubject(){
+      try{
+        setLoading(true)
+        const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/subject`)
+        if(!result.ok){
+          setMessage('somthing went wrong')
+          return
+        }
+        const {subject} = await result.json()
+        setSubjects(subject)
+      }catch(err){
+        console.log(err)
+      }finally{
+        setLoading(false)
+      }
+    }
+    getSubject()
+  }, [])
+
+ 
+  const filteredSubjects = subjects?.filter((subject) =>
+    subject.subjectName.toLowerCase().includes(search.toLowerCase()) ||
+    subject.code.toLowerCase().includes(search.toLowerCase())
+  );
+   const totalAssignments = subjects.reduce(
     (total, subject) => total + subject.classes.length,
     0
   );
 
-  const filteredSubjects = subjects.filter((subject) =>
-    subject.name.toLowerCase().includes(search.toLowerCase()) ||
-    subject.code.toLowerCase().includes(search.toLowerCase())
-  );
 
   function toggleClass(className: string) {
     setForm((prev) => ({
@@ -66,27 +80,57 @@ export default function SubjectsPage() {
     }));
   }
 
-  function addSubject(e: FormEvent<HTMLFormElement>) {
+  async function addSubject(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    setSubjects((prev) => [
+    try{
+       const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/subject`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(form)
+       })
+       if(!result.ok){
+        setMessage('something went wrong try agian')
+        return
+       }
+       const {subject} = await result.json()
+      setSubjects((prev) => [
       ...prev,
-      { id: Date.now(), ...form },
+      subject
     ]);
 
     setForm({
-      name: "",
+      subjectName: "",
       code: "",
       teacher: "",
       classes: [],
     });
-
+    }catch(err){
+      console.log(err)
+    }finally{
+      setLoading(false)
+    }
     setShowModal(false);
   }
 
-  function deleteSubject(id: number) {
+  async function deleteSubject(_id: number) {
     if (confirm("Are you sure you want to delete this subject?")) {
-      setSubjects((prev) => prev.filter((item) => item.id !== id));
+      try{
+        setLoading(true)
+        const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/subject/${_id}`, {
+          method:"Delete"
+        })
+        if(!result.ok){
+          setMessage("Somthing went wrong try again")
+          return
+        }
+         setSubjects((prev) => prev.filter((item) => item._id !== _id));
+      }catch(err){
+        console.log(err)
+        setMessage('server error')
+      }finally{
+        setLoading(false)
+      }
+     
     }
   }
 
@@ -130,7 +174,7 @@ export default function SubjectsPage() {
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
             <StatCard
               title="Total Subjects"
-              value={subjects.length}
+              value={subjects ? subjects.length : 0}
               icon={<BookOpen size={22} />}
               color="bg-indigo-100 text-indigo-600"
             />
@@ -144,7 +188,7 @@ export default function SubjectsPage() {
 
             <StatCard
               title="Assigned Teachers"
-              value={new Set(subjects.map((s) => s.teacher).filter(Boolean)).size}
+              value={new Set(subjects?.map((s) => s.teacher).filter(Boolean)).size || 0}
               icon={<Users size={22} />}
               color="bg-orange-100 text-orange-600"
             />
@@ -180,15 +224,15 @@ export default function SubjectsPage() {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100">
-                  {filteredSubjects.map((subject) => (
-                    <tr key={subject.id} className="hover:bg-gray-50">
+                  {filteredSubjects?.map((subject) => (
+                    <tr key={subject._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
                             <BookOpen size={19} />
                           </div>
                           <span className="font-semibold text-gray-800">
-                            {subject.name}
+                            {subject.subjectName}
                           </span>
                         </div>
                       </td>
@@ -222,15 +266,8 @@ export default function SubjectsPage() {
                       <td className="px-6 py-4">
                         <div className="flex gap-3">
                           <button
-                            title="Edit subject"
-                            className="text-indigo-600 hover:text-indigo-800"
-                          >
-                            <Pencil size={18} />
-                          </button>
-
-                          <button
                             title="Delete subject"
-                            onClick={() => deleteSubject(subject.id)}
+                            onClick={() => deleteSubject(subject._id)}
                             className="text-red-500 hover:text-red-700"
                           >
                             <Trash2 size={18} />
@@ -279,8 +316,8 @@ export default function SubjectsPage() {
                     <label className="text-sm font-medium">Subject Name</label>
                     <input
                       required
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      value={form.subjectName}
+                      onChange={(e) => setForm({ ...form, subjectName: e.target.value })}
                       placeholder="e.g. Mathematics"
                       className="w-full mt-2 p-3 border rounded-xl outline-none focus:border-indigo-500"
                     />
