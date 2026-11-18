@@ -58,7 +58,7 @@ export default function Navigation({active, setActive, sidebarOpen, setSidebarOp
       label: "ACADEMIC",
       items: [
         { name: "Result Management", icon: FileText, link: "/staff_dashboard/results" },
-        { name: "Examinations", icon: CalendarDays, link: "/staff_dashboard/examinations" },
+        // { name: "Examinations", icon: CalendarDays, link: "/staff_dashboard/examinations" },
       ],
     },
     {
