@@ -9,8 +9,24 @@ const auth = require('./routes/auth')
 
 
 const app = express()
-app.use(cors())
-app.use(express.json())
+
+const allowedURLs = process.env.ALLOWED_URLS
+  .split(',')
+  .map(url => url.trim());
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedURLs.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
+
+app.use(express.json());
 
 const PORT = process.env.PORT || 8080
 
