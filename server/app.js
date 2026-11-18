@@ -11,7 +11,7 @@ const auth = require('./routes/auth')
 const app = express()
 
 const allowedURLs = process.env.ALLOWED_URLS
-  .split(',')
+  allowedURLs.split(',')
   .map(url => url.trim());
 
 app.use(
