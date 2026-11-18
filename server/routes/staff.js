@@ -113,9 +113,10 @@ router.get('/student/:className', async(req, res)=>{
             classes:{
                 $in:[className]
             }
-        })
+        });
+        const results = await Result.find({className})
 
-        res.status(200).json({student, subject, message:"successful"})
+        res.status(200).json({student, subject, results, message:"successful"})
     }catch(err){
         console.log(err)
         res.status(500).json({message:"Server error"})
@@ -208,6 +209,7 @@ router.get('/fee_structure', async(req, res)=>{
 })
 router.post('/fee_structure', async(req, res)=>{
     try{
+        console.log(req.body)
         const feeStructure = await FeeStructure.create(req.body)
         res.status(200).json({feeStructure, message:'successfull'})
 

@@ -6,30 +6,22 @@ const feeStructureSchema = mongoose.Schema({
         required: true,
         trim: true
     },
-    tuitionFee: {
-        type: Number,
-        required: true
-    },
-    examFee: {
-        type: Number,
-        required: true
-    },
+    items: [
+        {
+            name: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            amount: {
+                type: Number,
+            }
+        }
+    ],
     session:{
         type: String,
     },
-    items:[
-        {
-            itemName:{
-                type:String,
-                required:true
-            },
-            itemAmount:{
-                type:Number,
-                required:true
-            },
 
-        }
-    ]
 }, {timestamps: true});
 
 const FeeStructure = mongoose.model("FeeStructure", feeStructureSchema);
