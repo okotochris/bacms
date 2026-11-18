@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState, FormEvent } from "react";
+import { useMemo, useState, FormEvent, useEffect } from "react";
 
 import {
   Plus,
@@ -24,69 +24,14 @@ type FeeItem = {
 };
 
 type FeeStructure = {
-  id: number;
+  _id: number;
   className: string;
   session: string;
   term: string;
   items: FeeItem[];
 };
 
-const initialStructures: FeeStructure[] = [
-  {
-    id: 1,
-    className: "JSS1",
-    session: "2026/2027",
-    term: "First Term",
-    items: [
-      { name: "Tuition Fee", amount: 40000 },
-      { name: "Examination Fee", amount: 5000 },
-      { name: "Books and Learning Materials", amount: 10000 },
-      { name: "Uniform", amount: 15000 },
-      { name: "Development Levy", amount: 5000 },
-    ],
-  },
-  {
-    id: 2,
-    className: "JSS2",
-    session: "2026/2027",
-    term: "First Term",
-    items: [
-      { name: "Tuition Fee", amount: 40000 },
-      { name: "Examination Fee", amount: 5000 },
-      { name: "Books and Learning Materials", amount: 10000 },
-      { name: "Uniform", amount: 15000 },
-      { name: "Development Levy", amount: 5000 },
-    ],
-  },
-  {
-    id: 3,
-    className: "SSS1",
-    session: "2026/2027",
-    term: "First Term",
-    items: [
-      { name: "Tuition Fee", amount: 50000 },
-      { name: "Examination Fee", amount: 7000 },
-      { name: "Books and Learning Materials", amount: 12000 },
-      { name: "Uniform", amount: 16000 },
-      { name: "Development Levy", amount: 5000 },
-    ],
-  },
-  {
-    id: 4,
-    className: "SSS2",
-    session: "2026/2027",
-    term: "First Term",
-    items: [
-      { name: "Tuition Fee", amount: 50000 },
-      { name: "Examination Fee", amount: 7000 },
-      { name: "Books and Learning Materials", amount: 12000 },
-      { name: "Uniform", amount: 16000 },
-      { name: "Development Levy", amount: 5000 },
-    ],
-  },
-];
-
-const classes = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
+const classes = ["SENIOR", "JUNIOR",  "BASIC", "NURSERY"];
 const terms = ["First Term", "Second Term", "Third Term"];
 
 const money = (amount: number) =>
@@ -100,7 +45,7 @@ const totalAmount = (items: FeeItem[]) =>
   items.reduce((sum, item) => sum + item.amount, 0);
 
 const emptyForm = {
-  className: "JSS1",
+  className: "SENIOR",
   session: "2026/2027",
   term: "First Term",
   items: [
@@ -116,16 +61,27 @@ export default function FeeStructurePage() {
   const [active, setActive] = useState("Fee Structure");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [structures, setStructures] =
-    useState<FeeStructure[]>(initialStructures);
-
+  const [structures, setStructures] = useState<FeeStructure[]>([]);
   const [search, setSearch] = useState("");
   const [sessionFilter, setSessionFilter] = useState("All Sessions");
   const [termFilter, setTermFilter] = useState("All Terms");
-
+  const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
+
+ useEffect(()=>{
+  async function fetchData() {
+    const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/fee_structure`)
+    if(!result){
+      setError("Something went wrong try again")
+      return
+    }
+    const {feeStructure} = await result.json()
+    setStructures(feeStructure)
+  }
+    fetchData()
+ },[])
 
   const sessions = useMemo(
     () => [...new Set(structures.map((item) => item.session))],
@@ -170,16 +126,7 @@ export default function FeeStructurePage() {
     setShowModal(true);
   };
 
-  const openEditModal = (structure: FeeStructure) => {
-    setEditingId(structure.id);
-    setForm({
-      className: structure.className,
-      session: structure.session,
-      term: structure.term,
-      items: structure.items.map((item) => ({ ...item })),
-    });
-    setShowModal(true);
-  };
+
 
   const updateItem = (
     index: number,
@@ -213,26 +160,26 @@ export default function FeeStructurePage() {
     }));
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const validItems = form.items.filter(
       (item) => item.name.trim() !== ""
     );
-
     if (validItems.length === 0) {
       alert("Please add at least one fee item.");
       return;
     }
-
     if (validItems.some((item) => item.amount < 0)) {
       alert("Fee amounts cannot be negative.");
       return;
     }
-
+   
     const duplicate = structures.some(
       (structure) =>
-        structure.id !== editingId &&
+        structure._id !== editingId &&
         structure.className === form.className &&
         structure.session === form.session &&
         structure.term === form.term
@@ -244,30 +191,31 @@ export default function FeeStructurePage() {
       );
       return;
     }
-
-    const record: FeeStructure = {
-      id: editingId ?? Date.now(),
-      className: form.className,
-      session: form.session.trim(),
-      term: form.term,
-      items: validItems,
-    };
-
-    if (editingId !== null) {
-      setStructures((previous) =>
-        previous.map((item) =>
-          item.id === editingId ? record : item
-        )
-      );
-    } else {
-      setStructures((previous) => [record, ...previous]);
-    }
-
+    try {
+      const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/fee_structure`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+      if(!result.ok){
+        setError("Somothing went wrong")
+        return
+      }
+     
+      
+   } catch (error) {
+    console.log(error)
+   }
+  
     setShowModal(false);
     setEditingId(null);
   };
 
-  const deleteStructure = (id: number) => {
+
+
+  const deleteStructure = (_id: number) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this fee structure?"
     );
@@ -275,7 +223,7 @@ export default function FeeStructurePage() {
     if (!confirmed) return;
 
     setStructures((previous) =>
-      previous.filter((item) => item.id !== id)
+      previous.filter((item) => item._id !== _id)
     );
   };
 
@@ -396,7 +344,7 @@ export default function FeeStructurePage() {
                   <tr>
                     <th className="px-6 py-4">Class</th>
                     <th className="px-6 py-4">Academic Session</th>
-                    <th className="px-6 py-4">Term</th>
+                   
                     <th className="px-6 py-4">Fee Items</th>
                     <th className="px-6 py-4">Total Amount</th>
                     <th className="px-6 py-4">Actions</th>
@@ -406,7 +354,7 @@ export default function FeeStructurePage() {
                 <tbody className="divide-y divide-gray-100">
                   {filteredStructures.map((structure) => (
                     <tr
-                      key={structure.id}
+                      key={structure._id}
                       className="hover:bg-gray-50"
                     >
                       <td className="px-6 py-4">
@@ -425,10 +373,6 @@ export default function FeeStructurePage() {
                       </td>
 
                       <td className="px-6 py-4 text-gray-600">
-                        {structure.term}
-                      </td>
-
-                      <td className="px-6 py-4 text-gray-600">
                         {structure.items.length} items
                       </td>
 
@@ -439,15 +383,7 @@ export default function FeeStructurePage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => openEditModal(structure)}
-                            title="Edit fee structure"
-                            className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-50"
-                          >
-                            <Pencil size={17} />
-                          </button>
-
-                          <button
-                            onClick={() => deleteStructure(structure.id)}
+                            onClick={() => deleteStructure(structure._id)}
                             title="Delete fee structure"
                             className="rounded-lg p-2 text-red-500 hover:bg-red-50"
                           >
@@ -559,25 +495,7 @@ export default function FeeStructurePage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                      Term
-                    </label>
-                    <select
-                      value={form.term}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          term: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-lg border border-gray-200 px-3 py-3 text-sm outline-none focus:border-indigo-500"
-                    >
-                      {terms.map((term) => (
-                        <option key={term}>{term}</option>
-                      ))}
-                    </select>
-                  </div>
+                 
                 </div>
 
                 {/* Fee items */}

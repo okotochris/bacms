@@ -1,7 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {Search, FileText, CheckCircle, Clock, Users, Upload, Save, Send, X, } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Search,
+  FileText,
+  CheckCircle,
+  Clock,
+  Users,
+  Upload,
+  Save,
+  Send,
+  X,
+} from "lucide-react";
 import Header from "../component/header";
 import Navigation from "../component/navigation";
 
@@ -59,11 +69,25 @@ const API = process.env.NEXT_PUBLIC_URL ?? "";
 
 const sessions = ["2025/2026", "2026/2027"];
 const terms = ["First Term", "Second Term", "Third Term"];
-const classes = ["SS 3", "SS 2", "SS 1", 
-"JSS 3", "JSS 2", "JSS 1", 
-'BASIC 6', 'BASIC 5', 'BASIC 4', 'BASIC 3', 'BASIC 2', 'BASIC 1',
-'NURSERY 3', 'NURSERY 2', 'NURSERY 1', 'PRE-NURSERY '
+const classes = [
+  "SS 3",
+  "SS 2",
+  "SS 1",
+  "JSS 3",
+  "JSS 2",
+  "JSS 1",
+  "BASIC 6",
+  "BASIC 5",
+  "BASIC 4",
+  "BASIC 3",
+  "BASIC 2",
+  "BASIC 1",
+  "NURSERY 3",
+  "NURSERY 2",
+  "NURSERY 1",
+  "PRE-NURSERY", // trailing space removed
 ];
+
 // Change the maximums to match your school's policy. They should add up to 100.
 const SCORE_FIELDS: { key: ScoreKey; label: string; max: number }[] = [
   { key: "firstTest", label: "1st Test", max: 10 },
@@ -77,7 +101,7 @@ const SCORE_FIELDS: { key: ScoreKey; label: string; max: number }[] = [
 // Example grading scale. Adjust to your school's approved policy.
 function getGrade(total: number | null) {
   if (total === null) return "-";
-   if (total >= 80) return "A+";
+  if (total >= 80) return "A+";
   if (total >= 70) return "A";
   if (total >= 60) return "B";
   if (total >= 50) return "C";
@@ -204,7 +228,84 @@ async function sendJson(url: string, method: string, body: unknown) {
   }
 }
 
+/* ------------------------------ Data loading -------------------------------- */
 
+type ClassData = {
+  students: Student[];
+  subjects: Subject[];
+  results: StudentResult[];
+};
+
+const EMPTY: ClassData = { students: [], subjects: [], results: [] };
+
+/**
+ * Loads students, subjects and results for ONE class from
+ * /api/student/:class. Nothing loads until a class is chosen, and changing
+ * the class loads that class only.
+ *
+ * `refetch()` reloads quietly (no spinner) after a save or publish.
+ */
+function useClassData(className: string) {
+  const [data, setData] = useState<ClassData>(EMPTY);
+  const [loading, setLoading] = useState(Boolean(className));
+  const [error, setError] = useState("");
+  const latest = useRef(0); // ignores responses from older requests
+
+  const load = useCallback(
+    async (silent: boolean) => {
+      const id = ++latest.current;
+
+      if (!className) {
+        setData(EMPTY);
+        setLoading(false);
+        return;
+      }
+
+      if (!silent) {
+        setLoading(true);
+        setData(EMPTY);
+      }
+      setError("");
+
+      try {
+        const res = await fetch(
+          `${API}/api/student/${encodeURIComponent(className)}`
+        );
+        if (!res.ok) throw new Error("Failed to load");
+        const json = await res.json();
+        if (id !== latest.current) return;
+
+        setData({
+          students: json.student ?? [],
+          subjects: json.subject ?? [],
+          results: (json.results ?? []).map((r: StudentResult) => ({
+            ...r,
+            subject: r.subject ?? [],
+          })),
+        });
+      } catch (err) {
+        if (id !== latest.current) return;
+        console.error(err);
+        setData(EMPTY);
+        setError("Could not load this class. Please try again.");
+      } finally {
+        if (id === latest.current) setLoading(false);
+      }
+    },
+    [className]
+  );
+
+  useEffect(() => {
+    load(false);
+    return () => {
+      latest.current++; // cancel anything still in flight
+    };
+  }, [load]);
+
+  const refetch = useCallback(() => load(true), [load]);
+
+  return { ...data, loading, error, refetch };
+}
 
 /* ---------------------------------- Page ------------------------------------ */
 
@@ -217,10 +318,6 @@ type Row = {
 };
 
 export default function ResultsPage() {
-  const [results, setResults] = useState<StudentResult[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -234,94 +331,23 @@ export default function ResultsPage() {
 
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("JSS 1");
-  const [subjectFilter, setSubjectFilter] = useState("Mathematics");
+  const [subjectFilter, setSubjectFilter] = useState("");
   const [sessionFilter, setSessionFilter] = useState("2025/2026");
   const [termFilter, setTermFilter] = useState("First Term");
   const [statusFilter, setStatusFilter] = useState("All");
 
-  /** Loads the students of one class from your /api/student/:class route. */
-function useClassStudents(className: string) {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { students, subjects, results, loading, error, refetch } =
+    useClassData(classFilter);
 
+  // Keep the selected subject valid for the loaded class
   useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetch(
-          `${API}/api/student/${encodeURIComponent(className)}`
-        );
-        if (!res.ok) throw new Error("Failed");
-        const { student, subject } = await res.json();
-        if (!cancelled) setStudents(student ?? []);
-        if (!cancelled) setSubjects(subject ?? []);
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) {
-          setStudents([]);
-          setError("Could not load the students for this class.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (
+      subjects.length > 0 &&
+      !subjects.some((s) => s.subjectName === subjectFilter)
+    ) {
+      setSubjectFilter(subjects[0].subjectName);
     }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [className]);
-
-  return { students, loading, error };
-}
-  const {
-    students,
-    loading: studentsLoading,
-    error: studentsError,
-  } = useClassStudents(classFilter);
-
-  /* ----------------------------- Load on page open ---------------------------- */
-
-  const loadData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setLoadError("");
-
-    try {
-      const res = await fetch(`${API}/api/result_subject`);
-      if (!res.ok) throw new Error("Failed to load data");
-
-      const { subject, studentResult } = await res.json();
-      const loadedSubjects: Subject[] = subject ?? [];
-      setSubjects(loadedSubjects);
-      setResults(
-        (studentResult ?? []).map((r: StudentResult) => ({
-          ...r,
-          subject: r.subject ?? [],
-        }))
-      );
-
-      // Make sure the selected subject exists in the loaded list
-      setSubjectFilter((current) =>
-        loadedSubjects.length > 0 &&
-        !loadedSubjects.some((s) => s.subjectName === current)
-          ? loadedSubjects[0].subjectName
-          : current
-      );
-    } catch (err) {
-      console.error(err);
-      setLoadError("Could not load results. Please refresh the page.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  }, [subjects, subjectFilter]);
 
   // Auto-hide notices
   useEffect(() => {
@@ -394,10 +420,7 @@ function useClassStudents(className: string) {
 
   // Drafts in this class/session/term that have at least one subject
   const classDocs = results.filter(
-    (r) =>
-      r.className === classFilter &&
-      r.session === sessionFilter &&
-      r.term === termFilter
+    (r) => r.session === sessionFilter && r.term === termFilter
   );
   const draftDocs = classDocs.filter(
     (r) => r.status === "Draft" && r.subject.length > 0
@@ -472,11 +495,12 @@ function useClassStudents(className: string) {
         })),
       });
 
+      const count = changedRows.length;
       setEdits({});
-      await loadData(true);
+      await refetch();
       setNotice({
         type: "success",
-        text: `${subjectFilter} scores saved for ${changedRows.length} student(s).`,
+        text: `${subjectFilter} scores saved for ${count} student(s).`,
       });
     } catch (err) {
       console.error(err);
@@ -547,7 +571,8 @@ function useClassStudents(className: string) {
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 Enter scores one subject for the whole class, or one student at
-                a time.<br/> Publish when every subject is done.
+                a time.
+                <br /> Publish when every subject is done.
               </p>
             </div>
 
@@ -579,7 +604,7 @@ function useClassStudents(className: string) {
               color="bg-indigo-100 text-indigo-600"
             />
             <StatCard
-              title={`${subjectFilter} Scores Entered`}
+              title={`${subjectFilter || "Subject"} Scores Entered`}
               value={completedCount}
               icon={<CheckCircle size={22} />}
               color="bg-green-100 text-green-600"
@@ -633,6 +658,7 @@ function useClassStudents(className: string) {
                 value={subjectFilter}
                 onChange={guarded(setSubjectFilter)}
                 options={subjects.map((s) => s.subjectName)}
+                placeholder="Select a subject"
               />
             </div>
           </div>
@@ -646,7 +672,8 @@ function useClassStudents(className: string) {
                     Student Results
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    {classFilter} · {subjectFilter} · {termFilter}
+                    {classFilter} · {subjectFilter || "No subject"} ·{" "}
+                    {termFilter}
                   </p>
                 </div>
 
@@ -703,29 +730,33 @@ function useClassStudents(className: string) {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100">
-                  {(loading || studentsLoading) && (
+                  {loading && (
                     <tr>
                       <td
                         colSpan={9}
                         className="text-center py-12 text-gray-500"
                       >
-                        Loading results...
+                        Loading {classFilter}...
                       </td>
                     </tr>
                   )}
 
-                  {!loading && !studentsLoading && (loadError || studentsError) && (
+                  {!loading && error && (
                     <tr>
                       <td colSpan={9} className="text-center py-12 text-red-600">
-                        {loadError || studentsError}
+                        {error}{" "}
+                        <button
+                          onClick={() => refetch()}
+                          className="underline"
+                        >
+                          Retry
+                        </button>
                       </td>
                     </tr>
                   )}
 
                   {!loading &&
-                    !studentsLoading &&
-                    !loadError &&
-                    !studentsError &&
+                    !error &&
                     filteredRows.map((r) => {
                       const id = r.student.studentId;
                       const inputs = getInputs(r);
@@ -799,22 +830,18 @@ function useClassStudents(className: string) {
                       );
                     })}
 
-                  {!loading &&
-                    !studentsLoading &&
-                    !loadError &&
-                    !studentsError &&
-                    filteredRows.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan={9}
-                          className="text-center py-12 text-gray-500"
-                        >
-                          {rows.length === 0
-                            ? "There are no students in this class yet."
-                            : "No students match your search."}
-                        </td>
-                      </tr>
-                    )}
+                  {!loading && !error && filteredRows.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={9}
+                        className="text-center py-12 text-gray-500"
+                      >
+                        {rows.length === 0
+                          ? "There are no students in this class yet."
+                          : "No students match your search."}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -822,32 +849,30 @@ function useClassStudents(className: string) {
             <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row justify-between gap-2 text-sm text-gray-500">
               <span>Showing {filteredRows.length} student(s)</span>
               <span>
-                {subjectFilter} class average: {averageScore}%
+                {subjectFilter || "Subject"} class average: {averageScore}%
               </span>
             </div>
           </div>
+
+          <div className="flex justify-end">
             <button
-                onClick={saveScores}
-                disabled={
-                  changedRows.length === 0 || hasInvalidChanges || saving
-                }
-                className="flex items-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm"
-              >
-                <Save size={18} />
-                {saving
-                  ? "Saving..."
-                  : `Save Scores${
-                      changedRows.length ? ` (${changedRows.length})` : ""
-                    }`}
-              </button>
+              onClick={saveScores}
+              disabled={changedRows.length === 0 || hasInvalidChanges || saving}
+              className="flex items-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl text-sm"
+            >
+              <Save size={18} />
+              {saving
+                ? "Saving..."
+                : `Save Scores${
+                    changedRows.length ? ` (${changedRows.length})` : ""
+                  }`}
+            </button>
+          </div>
         </main>
-        
       </div>
 
       {addOpen && (
         <AddResultModal
-          subjects={subjects.map((s) => s.subjectName)}
-          results={results}
           defaults={{
             session: sessionFilter,
             term: termFilter,
@@ -855,7 +880,10 @@ function useClassStudents(className: string) {
             subject: subjectFilter,
           }}
           onClose={() => setAddOpen(false)}
-          onSaved={() => loadData(true)}
+          onSaved={(savedClass) => {
+            // Only the class on the page needs refreshing
+            if (savedClass === classFilter) refetch();
+          }}
         />
       )}
 
@@ -869,7 +897,7 @@ function useClassStudents(className: string) {
           onClose={() => setPublishOpen(false)}
           onPublished={async (count) => {
             setPublishOpen(false);
-            await loadData(true);
+            await refetch();
             setNotice({
               type: "success",
               text: `${count} result(s) published for ${classFilter}.`,
@@ -884,17 +912,13 @@ function useClassStudents(className: string) {
 /* ----------------------- Add result (class > student > subject) ----------------------- */
 
 function AddResultModal({
-  subjects,
-  results,
   defaults,
   onClose,
   onSaved,
 }: {
-  subjects: string[];
-  results: StudentResult[];
   defaults: { session: string; term: string; className: string; subject: string };
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (className: string) => void;
 }) {
   const [session, setSession] = useState(defaults.session);
   const [term, setTerm] = useState(defaults.term);
@@ -907,9 +931,17 @@ function AddResultModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const { students, loading, error: studentsError } =
-    useClassStudents(className);
+  // The modal loads its own class, so it works independently of the page
+  const {
+    students,
+    subjects,
+    results,
+    loading,
+    error: loadError,
+    refetch,
+  } = useClassData(className);
 
+  const subjectNames = subjects.map((s) => s.subjectName);
   const student = students.find((s) => s.studentId === studentId);
   const doc = student
     ? findDoc(results, student.studentId, className, session, term)
@@ -923,7 +955,11 @@ function AddResultModal({
   );
 
   const total = inputsTotal(inputs);
-  const ready = !!student && !!subjectName && !locked && total !== null;
+  const ready =
+    !!student &&
+    subjectNames.includes(subjectName) &&
+    !locked &&
+    total !== null;
 
   function loadInputs(sId: string, subj: string) {
     const d = findDoc(results, sId, className, session, term);
@@ -973,7 +1009,8 @@ function AddResultModal({
       );
       setSubjectName("");
       setInputs(emptyInputs());
-      onSaved();
+      await refetch(); // refresh the modal's own list
+      onSaved(className); // and the page, if it shows the same class
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save.");
     } finally {
@@ -1040,10 +1077,10 @@ function AddResultModal({
           {loading && (
             <p className="p-4 text-sm text-gray-500">Loading students...</p>
           )}
-          {!loading && studentsError && (
-            <p className="p-4 text-sm text-red-600">{studentsError}</p>
+          {!loading && loadError && (
+            <p className="p-4 text-sm text-red-600">{loadError}</p>
           )}
-          {!loading && !studentsError && filteredStudents.length === 0 && (
+          {!loading && !loadError && filteredStudents.length === 0 && (
             <p className="p-4 text-sm text-gray-500">
               {students.length === 0
                 ? "There are no students in this class yet."
@@ -1120,7 +1157,7 @@ function AddResultModal({
             label="Subject"
             value={subjectName}
             onChange={selectSubject}
-            options={subjects}
+            options={subjectNames}
             placeholder="Select a subject"
           />
 
@@ -1217,14 +1254,19 @@ function PublishModal({
 
   // Calculations for every student
   const list = useMemo(() => {
-    const base = docs.map((doc) => ({ doc, ...summarize(doc.subject) }));
+    const base = docs.map((doc) => ({
+      doc,
+      ...summarize(doc.subject),
+    }));
     const maxSubjects = Math.max(0, ...base.map((b) => b.noSubj));
 
-    // Position by average; students with equal averages share a position
-    const sorted = [...base].sort((a, b) => b.average - a.average);
+    // Compare rounded averages so tiny floating-point gaps don't break ties
+    const rounded = (n: number) => Number(n.toFixed(2));
+    const sorted = base.map((b) => rounded(b.average)).sort((a, b) => b - a);
+
     return base.map((b) => ({
       ...b,
-      position: sorted.findIndex((s) => s.average === b.average) + 1,
+      position: sorted.indexOf(rounded(b.average)) + 1,
       fewerSubjects: b.noSubj < maxSubjects,
     }));
   }, [docs]);
