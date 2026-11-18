@@ -121,7 +121,7 @@ export default function TeachersPage() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     try{
-       const result = await fetch(`${'http://keen-perception-production-6ce06ecf.up.railway.app'}/api/teacher`, {
+       const result = await fetch(`${'https://keen-perception-production-6ce06ecf.up.railway.app'}/api/teacher`, {
         method:"POST",
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify(form)

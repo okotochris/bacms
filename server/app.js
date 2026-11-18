@@ -30,7 +30,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 8080
 
-const URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/bacmsdb'
+const URI = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/bacmsdb'
 mongodb.connect(URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect to MongoDB', err));
