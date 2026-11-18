@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const mongodb = require('mongoose')
 const staff = require('./routes/staff')
+const result = require('./routes/result')
 const auth = require('./routes/auth')
 
 
@@ -20,6 +21,7 @@ mongodb.connect(URI)
 
 app.use('/api', staff)
 app.use('/api', auth)
+app.use('/api', result)
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })

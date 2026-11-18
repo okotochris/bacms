@@ -7,6 +7,7 @@ const Subject = require('../database/subject')
 const PaymentHistory = require('../database/paymentHistory')
 const Result = require('../database/result')
 const bcrypt = require('bcrypt')
+const FeeStructure = require('../database/feeStructure')
 const fs = require('fs/promises');
 
 
@@ -108,7 +109,13 @@ router.get('/student/:className', async(req, res)=>{
      try{
         const {className} = req.params
         const student = await Student.find({className})
-        res.status(200).json({student, message:"successful"})
+        const subject = await Subject.find({
+            classes:{
+                $in:[className]
+            }
+        })
+
+        res.status(200).json({student, subject, message:"successful"})
     }catch(err){
         console.log(err)
         res.status(500).json({message:"Server error"})
@@ -188,5 +195,26 @@ router.get('/result_subject', async(req, res)=>{
     }
 })
 
+//FEE STRUCTURE
+router.get('/fee_structure', async(req, res)=>{
+    try{
+        const feeStructure = await FeeStructure.find().sort({createdAt:-1})
+        res.status(200).json({feeStructure, message:'successfull'})
+
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:'server error'})
+    }
+})
+router.post('/fee_structure', async(req, res)=>{
+    try{
+        const feeStructure = await FeeStructure.create(req.body)
+        res.status(200).json({feeStructure, message:'successfull'})
+
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:'server error'})
+    }
+})
 
 module.exports = router

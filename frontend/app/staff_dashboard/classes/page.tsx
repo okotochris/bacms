@@ -18,7 +18,7 @@ type Subject = {
 
 
 const availableClasses = [
-  "SSS 3", "SSS 2", "SSS 1",
+  "SS 3", "SS 2", "SS 1",
   "JSS 3", "JSS 2", "JSS 1",
   'BASIC 6', 'BASIC 5', 'BASIC 4', 'BASIC 3', 'BASIC 2', 'BASIC 1',
   'NURSERY 3', 'NURSERY 2', 'NURSERY 1', 'PRE NURSERY'

@@ -1,17 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  FileText,
-  CheckCircle,
-  Clock,
-  Users,
-  Upload,
-  Save,
-  Send,
-  X,
-} from "lucide-react";
+import {Search, FileText, CheckCircle, Clock, Users, Upload, Save, Send, X, } from "lucide-react";
 import Header from "../component/header";
 import Navigation from "../component/navigation";
 
@@ -69,14 +59,17 @@ const API = process.env.NEXT_PUBLIC_URL ?? "";
 
 const sessions = ["2025/2026", "2026/2027"];
 const terms = ["First Term", "Second Term", "Third Term"];
-const classes = ["JSS 1", "JSS 2", "JSS 3", "SS 1", "SS 2", "SS 3"];
-
+const classes = ["SS 3", "SS 2", "SS 1", 
+"JSS 3", "JSS 2", "JSS 1", 
+'BASIC 6', 'BASIC 5', 'BASIC 4', 'BASIC 3', 'BASIC 2', 'BASIC 1',
+'NURSERY 3', 'NURSERY 2', 'NURSERY 1', 'PRE-NURSERY '
+];
 // Change the maximums to match your school's policy. They should add up to 100.
 const SCORE_FIELDS: { key: ScoreKey; label: string; max: number }[] = [
   { key: "firstTest", label: "1st Test", max: 10 },
   { key: "secondText", label: "2nd Test", max: 10 },
-  { key: "ca", label: "CA", max: 20 },
-  { key: "exam", label: "Exam", max: 60 },
+  { key: "ca", label: "CA", max: 10 },
+  { key: "exam", label: "Exam", max: 70 },
 ];
 
 /* --------------------------------- Helpers ---------------------------------- */
@@ -84,6 +77,7 @@ const SCORE_FIELDS: { key: ScoreKey; label: string; max: number }[] = [
 // Example grading scale. Adjust to your school's approved policy.
 function getGrade(total: number | null) {
   if (total === null) return "-";
+   if (total >= 80) return "A+";
   if (total >= 70) return "A";
   if (total >= 60) return "B";
   if (total >= 50) return "C";
@@ -94,11 +88,12 @@ function getGrade(total: number | null) {
 
 function getRemark(total: number | null) {
   if (total === null) return "Pending";
-  if (total >= 70) return "Excellent";
-  if (total >= 60) return "Very Good";
-  if (total >= 50) return "Good";
-  if (total >= 45) return "Fair";
-  if (total >= 40) return "Pass";
+  if (total >= 80) return "Excellent";
+  if (total >= 70) return "Very Good";
+  if (total >= 60) return "Good";
+  if (total >= 50) return "Credit";
+  if (total >= 45) return "Pass";
+  if (total >= 40) return "Fair";
   return "Fail";
 }
 
@@ -209,44 +204,7 @@ async function sendJson(url: string, method: string, body: unknown) {
   }
 }
 
-/** Loads the students of one class from your /api/student/:class route. */
-function useClassStudents(className: string) {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetch(
-          `${API}/api/student/${encodeURIComponent(className)}`
-        );
-        if (!res.ok) throw new Error("Failed");
-        const { student } = await res.json();
-        if (!cancelled) setStudents(student ?? []);
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) {
-          setStudents([]);
-          setError("Could not load the students for this class.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [className]);
-
-  return { students, loading, error };
-}
 
 /* ---------------------------------- Page ------------------------------------ */
 
@@ -281,6 +239,45 @@ export default function ResultsPage() {
   const [termFilter, setTermFilter] = useState("First Term");
   const [statusFilter, setStatusFilter] = useState("All");
 
+  /** Loads the students of one class from your /api/student/:class route. */
+function useClassStudents(className: string) {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(
+          `${API}/api/student/${encodeURIComponent(className)}`
+        );
+        if (!res.ok) throw new Error("Failed");
+        const { student, subject } = await res.json();
+        if (!cancelled) setStudents(student ?? []);
+        if (!cancelled) setSubjects(subject ?? []);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) {
+          setStudents([]);
+          setError("Could not load the students for this class.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [className]);
+
+  return { students, loading, error };
+}
   const {
     students,
     loading: studentsLoading,
