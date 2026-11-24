@@ -35,24 +35,24 @@ export default function StudentLoginPage() {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/student/login", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/student/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fullName: fullName.trim(),
+          studentName: fullName.trim(),
           studentId: studentId.trim(),
         }),
       });
 
-      const data = await response.json();
+      const {student, message} = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Invalid student details.");
+        throw new Error(message.message || "Invalid student details.");
       }
-
-      router.push("/student/dashboard");
+      localStorage.setItem('student', JSON.stringify(student))
+      router.push("/student");
       router.refresh();
     } catch (err) {
       setError(

@@ -1,116 +1,336 @@
-
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Header from "../component/header";
-import Navigation from "../component/navigation";  
+import Navigation from "../component/navigation";
 import {
-  School,
   CalendarDays,
   GraduationCap,
-  CreditCard,
-  User,
   Shield,
-  Bell,
   Save,
   Plus,
   Trash2,
   Settings as SettingsIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-type Tab =
-  | "school"
-  | "academic"
-  | "grading"
-  | "payment"
-  | "account"
-  | "notifications";
+/* ----------------------------- Types & constants ----------------------------- */
+
+type Tab = "academic" | "grading" | "account";
 
 type Grade = {
-  id: number;
+  id: number; // front-end only, used as the React key
   grade: string;
   min: number;
   max: number;
   remark: string;
 };
 
+type Academic = {
+  session: string;
+  term: string;
+  startDate: string;
+  endDate: string;
+  nextTermDate: string;
+};
+
+type Account = {
+  _id: string;
+  fullname: string;
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+type Passwords = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+type Notice = { type: "success" | "error"; text: string } | null;
+
+const API = process.env.NEXT_PUBLIC_URL ?? "";
+
+// Empty (but defined) values keep every input controlled from the first render
+const EMPTY_ACADEMIC: Academic = {
+  session: "",
+  term: "First Term",
+  startDate: "",
+  endDate: "",
+  nextTermDate: "",
+};
+
+const EMPTY_ACCOUNT: Account = { _id: "", fullname: "", email: "", currentPassword:'', newPassword:'', confirmPassword:'' };
+
+const EMPTY_PASSWORDS: Passwords = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
+/* --------------------------------- Helpers ---------------------------------- */
+
+async function post<T = { message?: string }>(url: string, body: unknown) {
+  const res = await fetch(`${API}${url}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  let data: { message?: string } = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* no JSON body */
+  }
+
+  if (!res.ok) {
+    throw new Error(data.message || "Something went wrong. Please try again.");
+  }
+  return data as T;
+}
+
+/** Grades must cover 0-100 with no gaps and no overlaps (whole-number scores). */
+function checkGrades(list: Grade[]): string | null {
+  if (list.length === 0) return "Add at least one grade.";
+
+  const sorted = [...list].sort((a, b) => a.min - b.min);
+
+  if (sorted[0].min !== 0) return "The lowest grade must start at 0.";
+  if (sorted[sorted.length - 1].max !== 100) {
+    return "The highest grade must end at 100.";
+  }
+
+  for (let i = 0; i < sorted.length; i++) {
+    const g = sorted[i];
+    const name = g.grade || "A grade";
+
+    if (g.min > g.max) return `${name}: the minimum is higher than the maximum.`;
+
+    if (i > 0) {
+      const prev = sorted[i - 1];
+      if (g.min <= prev.max) {
+        return `${prev.grade || "A grade"} and ${name} overlap.`;
+      }
+      if (g.min > prev.max + 1) {
+        return `There is a gap between ${prev.max} and ${g.min}.`;
+      }
+    }
+  }
+  return null;
+}
+
+/* ---------------------------------- Page ------------------------------------ */
+
 export default function SettingsPage() {
-  const [active, setActive] = useState("Settings");
+  const router = useRouter();
+
+  const [active, setActive] = useState("Academic");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("school");
+  const [tab, setTab] = useState<Tab>("academic");
 
-  const [school, setSchool] = useState({
-    name: "My School",
-    email: "info@myschool.com",
-    phone: "",
-    address: "",
-    website: "",
-    motto: "",
-  });
+  const [academic, setAcademic] = useState<Academic>(EMPTY_ACADEMIC);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [account, setAccount] = useState<Account>(EMPTY_ACCOUNT);
+  const [passwords, setPasswords] = useState<Passwords>(EMPTY_PASSWORDS);
 
-  const [academic, setAcademic] = useState({
-    session: "2026/2027",
-    term: "First Term",
-    startDate: "",
-    endDate: "",
-    nextTermDate: "",
-  });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saving, setSaving] = useState(""); // which form is saving
+  const [notice, setNotice] = useState<Notice>(null);
 
-  const [grades, setGrades] = useState<Grade[]>([
-    { id: 1, grade: "A", min: 70, max: 100, remark: "Excellent" },
-    { id: 2, grade: "B", min: 60, max: 69, remark: "Very Good" },
-    { id: 3, grade: "C", min: 50, max: 59, remark: "Good" },
-    { id: 4, grade: "D", min: 45, max: 49, remark: "Fair" },
-    { id: 5, grade: "E", min: 40, max: 44, remark: "Pass" },
-    { id: 6, grade: "F", min: 0, max: 39, remark: "Fail" },
-  ]);
+  /* ------------------------------ Load details -------------------------------- */
 
-  const [payment, setPayment] = useState({
-    bankName: "",
-    accountName: "",
-    accountNumber: "",
-    paymentInstructions: "",
-  });
+  useEffect(() => {
+    const saved = sessionStorage.getItem("user");
+    if (!saved) {
+      router.push("/login");
+      return;
+    }
 
-  const [account, setAccount] = useState({
-    adminName: "Administrator",
-    email: "admin@myschool.com",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+    let user;
+    try {
+      user = JSON.parse(saved);
+    } catch {
+      router.push("/login");
+      return;
+    }
 
-  const [notifications, setNotifications] = useState({
-    feePayments: true,
-    newAdmissions: true,
-    resultUpdates: true,
-    lowAttendance: false,
-    systemUpdates: true,
-  });
+    if (user.role !== "admin") {
+      router.push("/staff_dashboard");
+      return;
+    }
 
-  const [savedMessage, setSavedMessage] = useState("");
+    setAccount({
+      _id: user._id ?? user.id ?? "",
+      fullname: user.fullname ?? "",
+      email: user.email ?? "",
+     currentPassword: user.currentPassword ?? "",
+     newPassword: user.newPassword ?? "",
+     confirmPassword: user.newPassword ?? "",
+    });
 
-  const saveSettings = (e: FormEvent<HTMLFormElement>) => {
+    async function load() {
+      try {
+        const res = await fetch(`${API}/api/all_details`);
+        if (!res.ok) throw new Error("Failed to load");
+
+        const data = await res.json();
+        setGrades(
+          (data.grades ?? []).map((g: Omit<Grade, "id">, i: number) => ({
+            ...g,
+            id: i + 1,
+          }))
+        );
+        setAcademic({ ...EMPTY_ACADEMIC, ...(data.accademic ?? {}) });
+      } catch (err) {
+        console.error(err);
+        setLoadError("Could not load settings. Please refresh the page.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [router]);
+
+  // Auto-hide notices
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  /* -------------------------------- Saving ------------------------------------ */
+
+  /** Runs one save, shows the result, and tracks which form is busy. */
+  async function run(name: string, task: () => Promise<string>) {
+    setSaving(name);
+    try {
+      setNotice({ type: "success", text: await task() });
+    } catch (err) {
+      setNotice({
+        type: "error",
+        text: err instanceof Error ? err.message : "Could not save.",
+      });
+    } finally {
+      setSaving("");
+    }
+  }
+
+  const saveAcademic = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSavedMessage("Settings saved successfully.");
-
-    setTimeout(() => setSavedMessage(""), 3000);
+    run("academic", async () => {
+      const { message } = await post("/api/academic", {
+        userId: account._id,
+        ...academic,
+      });
+      return message ?? "Academic settings saved.";
+    });
   };
 
-  const updateGrade = (
-    id: number,
-    field: keyof Grade,
-    value: string
-  ) => {
+  const saveGrades = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const problem = checkGrades(grades);
+    if (problem) {
+      setNotice({ type: "error", text: problem });
+      return;
+    }
+
+    run("grading", async () => {
+      const { message } = await post("/api/grades", {
+        userId: account._id,
+        grades: grades.map(({ grade, min, max, remark }) => ({
+          grade,
+          min,
+          max,
+          remark,
+        })),
+      });
+      return message ?? "Grading system saved.";
+    });
+  };
+
+  const saveProfile = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    run("profile", async () => {
+      const { user } = await post<{ user: Account }>("/api/account/profile", {
+        userId: account._id,
+        fullname: account.fullname,
+        email: account.email,
+         newPassword: account.newPassword,
+        confirmPassword: account.confirmPassword,
+        currentPassword: account.currentPassword,
+      });
+
+      setAccount((prev) => ({
+        ...prev,
+        fullname: user.fullname,
+        email: user.email,
+        newPassword: '',
+        confirmPassword: '',
+        currentPassword: '',
+      }));
+
+      // Keep the logged-in user in sync for the rest of the app
+      const saved = sessionStorage.getItem("user");
+      if (saved) {
+        sessionStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...JSON.parse(saved),
+            fullname: user.fullname,
+            email: user.email,
+          })
+        );
+      }
+      return "Profile updated.";
+    });
+  };
+
+  const changePassword = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (passwords.newPassword.length < 8) {
+      setNotice({
+        type: "error",
+        text: "New password must contain at least 8 characters.",
+      });
+      return;
+    }
+
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      setNotice({
+        type: "error",
+        text: "New password and confirmation do not match.",
+      });
+      return;
+    }
+
+    run("password", async () => {
+      await post("/api/account/password", {
+        userId: account._id,
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword,
+      });
+      setPasswords(EMPTY_PASSWORDS);
+      return "Password updated.";
+    });
+  };
+
+  /* ------------------------------ Grade editing ------------------------------- */
+
+  const updateGrade = (id: number, field: keyof Grade, value: string) => {
     setGrades((previous) =>
       previous.map((grade) =>
         grade.id === id
           ? {
               ...grade,
               [field]:
-                field === "min" || field === "max"
-                  ? Number(value)
-                  : value,
+                field === "min" || field === "max" ? Number(value) : value,
             }
           : grade
       )
@@ -120,56 +340,21 @@ export default function SettingsPage() {
   const addGrade = () => {
     setGrades((previous) => [
       ...previous,
-      {
-        id: Date.now(),
-        grade: "",
-        min: 0,
-        max: 0,
-        remark: "",
-      },
+      { id: Date.now(), grade: "", min: 0, max: 0, remark: "" },
     ]);
   };
 
   const removeGrade = (id: number) => {
-    setGrades((previous) =>
-      previous.filter((grade) => grade.id !== id)
-    );
+    setGrades((previous) => previous.filter((grade) => grade.id !== id));
   };
 
-  const menuItems: {
-    id: Tab;
-    label: string;
-    icon: React.ReactNode;
-  }[] = [
-    { id: "school", label: "School Information", icon: <School size={18} /> },
+  const menuItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "academic", label: "Academic Settings", icon: <CalendarDays size={18} /> },
     { id: "grading", label: "Grading System", icon: <GraduationCap size={18} /> },
-    { id: "payment", label: "Payment Settings", icon: <CreditCard size={18} /> },
     { id: "account", label: "Account & Security", icon: <Shield size={18} /> },
-    { id: "notifications", label: "Notifications", icon: <Bell size={18} /> },
   ];
 
-  const changePassword = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (account.newPassword.length < 8) {
-      alert("New password must contain at least 8 characters.");
-      return;
-    }
-
-    if (account.newPassword !== account.confirmPassword) {
-      alert("New password and confirmation do not match.");
-      return;
-    }
-
-    alert("Password form validated. Connect this action to your authentication provider.");
-    setAccount((previous) => ({
-      ...previous,
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    }));
-  };
+  /* --------------------------------- Render ----------------------------------- */
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -185,9 +370,7 @@ export default function SettingsPage() {
 
         <main className="p-4 md:p-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">
-              System Settings
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
             <p className="mt-1 text-sm text-gray-500">
               Manage your school&apos;s information and system preferences.
             </p>
@@ -198,9 +381,7 @@ export default function SettingsPage() {
             <div className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
               <div className="mb-3 flex items-center gap-2 px-3 py-3">
                 <SettingsIcon size={20} className="text-indigo-600" />
-                <span className="font-semibold text-gray-900">
-                  Settings Menu
-                </span>
+                <span className="font-semibold text-gray-900">Settings Menu</span>
               </div>
 
               <div className="space-y-1">
@@ -223,86 +404,35 @@ export default function SettingsPage() {
 
             {/* Settings content */}
             <div className="lg:col-span-3">
-              {savedMessage && (
-                <div className="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                  {savedMessage}
+              {notice && (
+                <div
+                  role="status"
+                  className={`mb-5 rounded-lg border p-3 text-sm ${
+                    notice.type === "success"
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {notice.text}
                 </div>
               )}
 
-              {/* School information */}
-              {tab === "school" && (
-                <form
-                  onSubmit={saveSettings}
-                  className="rounded-xl border border-gray-100 bg-white shadow-sm"
-                >
-                  <SectionHeading
-                    title="School Information"
-                    description="Update your school's official information."
-                  />
+              {loading && (
+                <div className="rounded-xl border border-gray-100 bg-white p-10 text-center text-sm text-gray-500 shadow-sm">
+                  Loading settings...
+                </div>
+              )}
 
-                  <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-                    <InputField
-                      label="School Name"
-                      value={school.name}
-                      onChange={(value) =>
-                        setSchool({ ...school, name: value })
-                      }
-                    />
-
-                    <InputField
-                      label="School Email"
-                      type="email"
-                      value={school.email}
-                      onChange={(value) =>
-                        setSchool({ ...school, email: value })
-                      }
-                    />
-
-                    <InputField
-                      label="Phone Number"
-                      value={school.phone}
-                      onChange={(value) =>
-                        setSchool({ ...school, phone: value })
-                      }
-                    />
-
-                    <InputField
-                      label="Website"
-                      value={school.website}
-                      onChange={(value) =>
-                        setSchool({ ...school, website: value })
-                      }
-                    />
-
-                    <div className="md:col-span-2">
-                      <InputField
-                        label="School Address"
-                        value={school.address}
-                        onChange={(value) =>
-                          setSchool({ ...school, address: value })
-                        }
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <InputField
-                        label="School Motto"
-                        value={school.motto}
-                        onChange={(value) =>
-                          setSchool({ ...school, motto: value })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <SaveButton />
-                </form>
+              {!loading && loadError && (
+                <div className="rounded-xl border border-red-100 bg-red-50 p-10 text-center text-sm text-red-600 shadow-sm">
+                  {loadError}
+                </div>
               )}
 
               {/* Academic settings */}
-              {tab === "academic" && (
+              {!loading && !loadError && tab === "academic" && (
                 <form
-                  onSubmit={saveSettings}
+                  onSubmit={saveAcademic}
                   className="rounded-xl border border-gray-100 bg-white shadow-sm"
                 >
                   <SectionHeading
@@ -323,11 +453,7 @@ export default function SettingsPage() {
                     <SelectField
                       label="Current Term"
                       value={academic.term}
-                      options={[
-                        "First Term",
-                        "Second Term",
-                        "Third Term",
-                      ]}
+                      options={["First Term", "Second Term", "Third Term"]}
                       onChange={(value) =>
                         setAcademic({ ...academic, term: value })
                       }
@@ -361,14 +487,14 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <SaveButton />
+                  <SaveButton saving={saving === "academic"} />
                 </form>
               )}
 
               {/* Grading settings */}
-              {tab === "grading" && (
+              {!loading && !loadError && tab === "grading" && (
                 <form
-                  onSubmit={saveSettings}
+                  onSubmit={saveGrades}
                   className="rounded-xl border border-gray-100 bg-white shadow-sm"
                 >
                   <SectionHeading
@@ -452,6 +578,7 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() => removeGrade(grade.id)}
+                                  aria-label="Remove grade"
                                   className="rounded-lg p-2 text-red-500 hover:bg-red-50"
                                 >
                                   <Trash2 size={17} />
@@ -469,80 +596,15 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  <SaveButton />
-                </form>
-              )}
-
-              {/* Payment settings */}
-              {tab === "payment" && (
-                <form
-                  onSubmit={saveSettings}
-                  className="rounded-xl border border-gray-100 bg-white shadow-sm"
-                >
-                  <SectionHeading
-                    title="Payment Settings"
-                    description="Set the school's bank account details for fee payments."
-                  />
-
-                  <div className="space-y-5 p-6">
-                    <InputField
-                      label="Bank Name"
-                      value={payment.bankName}
-                      onChange={(value) =>
-                        setPayment({ ...payment, bankName: value })
-                      }
-                      placeholder="Enter bank name"
-                    />
-
-                    <InputField
-                      label="Account Name"
-                      value={payment.accountName}
-                      onChange={(value) =>
-                        setPayment({ ...payment, accountName: value })
-                      }
-                      placeholder="School account name"
-                    />
-
-                    <InputField
-                      label="Account Number"
-                      value={payment.accountNumber}
-                      onChange={(value) =>
-                        setPayment({ ...payment, accountNumber: value })
-                      }
-                      placeholder="Enter account number"
-                    />
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Payment Instructions
-                      </label>
-                      <textarea
-                        rows={4}
-                        value={payment.paymentInstructions}
-                        onChange={(e) =>
-                          setPayment({
-                            ...payment,
-                            paymentInstructions: e.target.value,
-                          })
-                        }
-                        placeholder="Enter instructions for parents..."
-                        className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                  </div>
-
-                  <SaveButton />
+                  <SaveButton saving={saving === "grading"} />
                 </form>
               )}
 
               {/* Account and security */}
-              {tab === "account" && (
+              {!loading && !loadError && tab === "account" && (
                 <div className="space-y-6">
                   <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      alert("Account profile form validated.");
-                    }}
+                    onSubmit={saveProfile}
                     className="rounded-xl border border-gray-100 bg-white shadow-sm"
                   >
                     <SectionHeading
@@ -553,9 +615,9 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
                       <InputField
                         label="Full Name"
-                        value={account.adminName}
+                        value={account.fullname}
                         onChange={(value) =>
-                          setAccount({ ...account, adminName: value })
+                          setAccount({ ...account, fullname: value })
                         }
                       />
                       <InputField
@@ -568,13 +630,6 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <SaveButton />
-                  </form>
-
-                  <form
-                    onSubmit={changePassword}
-                    className="rounded-xl border border-gray-100 bg-white shadow-sm"
-                  >
                     <SectionHeading
                       title="Change Password"
                       description="Update your administrator login password."
@@ -610,97 +665,14 @@ export default function SettingsPage() {
                     <div className="border-t border-gray-100 p-6">
                       <button
                         type="submit"
-                        className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700"
+                        disabled={saving === "password"}
+                        className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                       >
-                        Update Password
+                        {saving === "password" ? "Updating..." : "Update Password"}
                       </button>
                     </div>
                   </form>
                 </div>
-              )}
-
-              {/* Notifications */}
-              {tab === "notifications" && (
-                <form
-                  onSubmit={saveSettings}
-                  className="rounded-xl border border-gray-100 bg-white shadow-sm"
-                >
-                  <SectionHeading
-                    title="Notification Preferences"
-                    description="Choose which system notifications you want to receive."
-                  />
-
-                  <div className="divide-y divide-gray-100 p-6">
-                    {[
-                      {
-                        key: "feePayments" as const,
-                        title: "Fee Payments",
-                        description: "Receive alerts when a student pays school fees.",
-                      },
-                      {
-                        key: "newAdmissions" as const,
-                        title: "New Admissions",
-                        description: "Receive alerts when a new student is registered.",
-                      },
-                      {
-                        key: "resultUpdates" as const,
-                        title: "Result Updates",
-                        description: "Receive notifications when results are published.",
-                      },
-                      {
-                        key: "lowAttendance" as const,
-                        title: "Low Attendance",
-                        description: "Receive alerts about attendance concerns.",
-                      },
-                      {
-                        key: "systemUpdates" as const,
-                        title: "System Updates",
-                        description: "Receive important system announcements.",
-                      },
-                    ].map((item) => (
-                      <div
-                        key={item.key}
-                        className="flex items-center justify-between gap-4 py-4"
-                      >
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {item.title}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {item.description}
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={notifications[item.key]}
-                          onClick={() =>
-                            setNotifications((previous) => ({
-                              ...previous,
-                              [item.key]: !previous[item.key],
-                            }))
-                          }
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-                            notifications[item.key]
-                              ? "bg-indigo-600"
-                              : "bg-gray-300"
-                          }`}
-                        >
-                          <span
-                            className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${
-                              notifications[item.key]
-                                ? "left-6"
-                                : "left-1"
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <SaveButton />
-                </form>
               )}
             </div>
           </div>
@@ -785,15 +757,16 @@ function SelectField({
   );
 }
 
-function SaveButton() {
+function SaveButton({ saving }: { saving: boolean }) {
   return (
     <div className="flex justify-end border-t border-gray-100 p-6">
       <button
         type="submit"
-        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700"
+        disabled={saving}
+        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-300"
       >
         <Save size={17} />
-        Save Changes
+        {saving ? "Saving..." : "Save Changes"}
       </button>
     </div>
   );

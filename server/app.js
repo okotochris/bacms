@@ -5,6 +5,7 @@ const mongodb = require('mongoose')
 const staff = require('./routes/staff')
 const result = require('./routes/result')
 const auth = require('./routes/auth')
+const studentRoute = require('./routes/student')
 
 
 
@@ -38,6 +39,7 @@ mongodb.connect(URI)
 app.use('/api', staff)
 app.use('/api', auth)
 app.use('/api', result)
+app.use('/api', studentRoute)
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
 })

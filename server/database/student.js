@@ -43,6 +43,11 @@ const studentSchema = new mongoose.Schema(
       profileImage: String,
       public_id: String,
     },
+    guardianName: String,
+    guardianContact: String,
+    guardianRelationshipStatus: String,
+    address:String,
+
   },
   { timestamps: true },
 );

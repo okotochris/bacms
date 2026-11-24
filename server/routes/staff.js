@@ -8,6 +8,8 @@ const PaymentHistory = require('../database/paymentHistory')
 const Result = require('../database/result')
 const bcrypt = require('bcrypt')
 const FeeStructure = require('../database/feeStructure')
+const Grading = require('../database/grading')
+const Accademic = require('../database/accademic')
 const fs = require('fs/promises');
 
 
@@ -209,7 +211,6 @@ router.get('/fee_structure', async(req, res)=>{
 })
 router.post('/fee_structure', async(req, res)=>{
     try{
-        console.log(req.body)
         const feeStructure = await FeeStructure.create(req.body)
         res.status(200).json({feeStructure, message:'successfull'})
 
@@ -218,5 +219,108 @@ router.post('/fee_structure', async(req, res)=>{
         res.status(500).json({message:'server error'})
     }
 })
+
+//SETTING ROUTES
+router.get('/all_details', async(req, res)=>{
+    try{
+        const accademic = await Accademic.findOne()
+        const grades = await Grading.find()
+      
+        res.status(200).json({accademic, grades})
+    }catch(err){
+        res.status(500).json({message:'server error'})
+        console.log(err)
+    }
+})
+
+router.post('/academic', async(req, res)=>{
+    try{
+     
+       const accademic = await Accademic.create(req.body)
+       res.status(200).json({accademic})
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:"server error"})
+    }
+})
+
+router.post('/grades', async(req, res)=>{
+    try{
+        const schoolGrades = req.body.grades
+        for(let i =0; i < schoolGrades.length; i++){
+             await Grading.create(schoolGrades[i])
+        }
+        res.status(200).json({message:'saved'});
+
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:'server error'})
+    }
+})
+
+
+router.post('/account/profile', async (req, res) => {
+  try {
+   
+    const { userId, currentPassword, newPassword, fullname, email } = req.body;
+    if(!newPassword){
+        await Teacher.findOneAndUpdate({_id:userId}, {fullname, email})
+        return res.status(200).json({message:'name and email updated'})
+    }
+    // Find user
+    const user = await Teacher.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // Check role
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        message: "You are not authorized to make this change"
+      });
+    }
+
+    // Verify current password
+    const isPassword = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!isPassword) {
+      return res.status(401).json({
+        message: "Your current password is wrong"
+      });
+    }
+
+    // Validate new password
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({
+        message: "New password must be at least 8 characters"
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await Teacher.findByIdAndUpdate(userId, {
+      $set: { password: hashedPassword, email, fullname }
+    });
+
+    return res.status(200).json({
+      message: "Password updated successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      message: "Server error"
+    });
+  }
+});
 
 module.exports = router
