@@ -13,6 +13,7 @@ import {
   CalendarDays
 } from "lucide-react";
 
+
 type Student = {
   fullname?: string;
   studentId?: string;
@@ -99,15 +100,7 @@ export default function Profile() {
     <div className="max-w-5xl mx-auto space-y-6 bg-slate-50 text-slate-800 dark:bg-slate-50 dark:text-slate-800 [color-scheme:light]">
 
       {/* Page Heading */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-          My Profile
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          View your personal and academic information.
-        </p>
-      </div>
-
+   
       {/* Profile Overview */}
       <div className="bg-white dark:bg-white text-slate-800 border border-slate-100 rounded-2xl overflow-hidden">
 

@@ -433,7 +433,7 @@ export default function SettingsPage() {
               {!loading && !loadError && tab === "academic" && (
                 <form
                   onSubmit={saveAcademic}
-                  className="rounded-xl border border-gray-100 bg-white shadow-sm"
+                  className="rounded-xl text-gray-800 border border-gray-100 bg-white shadow-sm"
                 >
                   <SectionHeading
                     title="Academic Settings"
@@ -535,7 +535,7 @@ export default function SettingsPage() {
                                   onChange={(e) =>
                                     updateGrade(grade.id, "grade", e.target.value)
                                   }
-                                  className="w-16 rounded-lg border border-gray-200 px-3 py-2"
+                                  className="w-16 rounded-lg border border-gray-200 px-3 py-2 text-gray-900"
                                 />
                               </td>
                               <td className="px-3 py-3">
@@ -548,7 +548,7 @@ export default function SettingsPage() {
                                   onChange={(e) =>
                                     updateGrade(grade.id, "min", e.target.value)
                                   }
-                                  className="w-24 rounded-lg border border-gray-200 px-3 py-2"
+                                  className="w-24 rounded-lg border border-gray-200 px-3 py-2  text-gray-900"
                                 />
                               </td>
                               <td className="px-3 py-3">
@@ -561,7 +561,7 @@ export default function SettingsPage() {
                                   onChange={(e) =>
                                     updateGrade(grade.id, "max", e.target.value)
                                   }
-                                  className="w-24 rounded-lg border border-gray-200 px-3 py-2"
+                                  className="w-24 rounded-lg border border-gray-200 px-3 py-2  text-gray-900"
                                 />
                               </td>
                               <td className="px-3 py-3">
@@ -571,7 +571,7 @@ export default function SettingsPage() {
                                   onChange={(e) =>
                                     updateGrade(grade.id, "remark", e.target.value)
                                   }
-                                  className="w-32 rounded-lg border border-gray-200 px-3 py-2"
+                                  className="w-32 rounded-lg border border-gray-200 px-3 py-2  text-gray-900"
                                 />
                               </td>
                               <td className="px-3 py-3">
@@ -722,7 +722,7 @@ function InputField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || label}
-        className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none focus:border-indigo-500"
+        className="w-full rounded-lg border border-gray-200 px-4 py-3 text-gray-900 text-sm outline-none focus:border-indigo-500"
       />
     </div>
   );
