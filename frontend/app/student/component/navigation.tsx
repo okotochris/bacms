@@ -20,11 +20,11 @@ function Navigation({
 const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, url:'/student', active: true },
     { name: "My Profile", icon: UserRound, url:'/student/profile' },
-    { name: "My Results", icon: BookOpen, url:'student/result' },
+    { name: "My Results", icon: BookOpen, url:'/student/result' },
     // { name: "Assignments", icon: ClipboardList },
     // { name: "Timetable", icon: CalendarDays },
     // { name: "Announcements", icon: Megaphone },
-    { name: "School Fees", icon: Wallet, url:'student/fees' },
+    { name: "School Fees", icon: Wallet, url:'/student/fees' },
   ];
 
   return (

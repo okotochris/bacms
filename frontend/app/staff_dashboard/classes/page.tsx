@@ -206,7 +206,7 @@ export default function SubjectsPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search subjects or subject code..."
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-xl outline-none focus:border-indigo-500"
+                  className="w-full pl-10 pr-4 py-3  text-gray-800 bg-gray-50 border rounded-xl outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -313,39 +313,39 @@ export default function SubjectsPage() {
 
                 <form onSubmit={addSubject} className="p-6 space-y-4">
                   <div>
-                    <label className="text-sm font-medium">Subject Name</label>
+                    <label className="text-sm font-medium  text-black">Subject Name</label>
                     <input
                       required
                       value={form.subjectName}
                       onChange={(e) => setForm({ ...form, subjectName: e.target.value })}
                       placeholder="e.g. Mathematics"
-                      className="w-full mt-2 p-3 border rounded-xl outline-none focus:border-indigo-500"
+                      className="w-full  mt-2 p-3 border text-black rounded-xl outline-none focus:border-indigo-500"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Subject Code</label>
+                    <label className="text-sm font-medium text-black">Subject Code</label>
                     <input
                       required
                       value={form.code}
                       onChange={(e) => setForm({ ...form, code: e.target.value })}
                       placeholder="e.g. MTH101"
-                      className="w-full mt-2 p-3 border rounded-xl outline-none focus:border-indigo-500"
+                      className="w-full mt-2 p-3 border  text-black rounded-xl outline-none focus:border-indigo-500"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">Subject Teacher</label>
+                    <label className="text-sm font-medium text-black">Subject Teacher</label>
                     <input
                       value={form.teacher}
                       onChange={(e) => setForm({ ...form, teacher: e.target.value })}
                       placeholder="Enter teacher's name"
-                      className="w-full mt-2 p-3 border rounded-xl outline-none focus:border-indigo-500"
+                      className="w-full mt-2 p-3 border  text-black rounded-xl outline-none focus:border-indigo-500"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium">
+                    <label className="text-sm font-medium text-black">
                       Assign to Classes
                     </label>
 
@@ -353,7 +353,7 @@ export default function SubjectsPage() {
                       {availableClasses.map((className) => (
                         <label
                           key={className}
-                          className="flex items-center gap-2 p-3 border rounded-xl text-sm cursor-pointer hover:bg-indigo-50"
+                          className="flex  text-black items-center gap-2 p-3 border rounded-xl text-sm cursor-pointer hover:bg-indigo-50"
                         >
                           <input
                             type="checkbox"
