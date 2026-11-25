@@ -10,7 +10,8 @@ const studentSchema = new mongoose.Schema(
     studentId:{
         type:String,
         trim:true,
-        require:true
+        require:true,
+        unique:true
     },
     admissionNo: {
       type: String,

@@ -269,7 +269,7 @@ function useClassData(className: string) {
 
       try {
         const res = await fetch(
-          `${API}/api/student/${encodeURIComponent(className)}`
+          `${API}/api/student-result/${encodeURIComponent(className)}`
         );
         if (!res.ok) throw new Error("Failed to load");
         const json = await res.json();

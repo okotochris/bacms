@@ -37,7 +37,31 @@ router.get('/student', async(req, res)=>{
         res.status(500).json({message:'server error'})
     }
 })
-
+router.delete('/student/:_id', async(req, res)=>{
+    try{
+        const student = await Student.findOne({_id:req.params._id})
+        if(student.image.public_id){
+            await cloudinary.uploader.destroy(student.image.public_id)
+        }
+        await Student.findOneAndDelete({_id:req.params._id})
+        res.status(200).json({message:"deleted"})
+    }catch(err){
+        console.log(err)
+    }
+})
+router.get('/student/:_id', async(req, res)=>{
+    try{
+        const student = await Student.findOne({_id:req.params._id})
+        if(!student){
+            return res.status(404).json({message:"student not found"})
+        }
+        
+        res.status(200).json({student})
+    }catch(err){
+        res.status(500).json({message:'server error'})
+        console.log(err)
+    }
+})
 router.post('/student', upload.single('profileImage'), async (req, res) => {
   let uploadedImage = null;
 
@@ -93,21 +117,83 @@ router.post('/student', upload.single('profileImage'), async (req, res) => {
     });
   }
 });
-router.delete('/student/:_id', async(req, res)=>{
-     try{
-        const {_id} = req.params
-        const student = await Student.findOne({_id})
-        if(student){
-            await cloudinary.destroy(student.image.public_id)
-        }
-        await Student.findOneAndDelete({_id})
-        res.status(200).json({message:"successful"})
-    }catch(err){
-        console.log(err)
-        res.status(500).json({message:"Server error"})
+
+router.patch('/student', upload.single('profileImage'), async (req, res) => {
+  let uploadedImage = null;
+
+  try {
+    const studentOldInfo = await Student.findOne({
+      studentId: req.body.studentId
+    });
+
+    if (!studentOldInfo) {
+      return res.status(404).json({
+        message: 'Student not found'
+      });
     }
-})
-router.get('/student/:className', async(req, res)=>{
+
+    // Preserve the existing image
+    let image = studentOldInfo.image;
+    console.log(req.file)
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'bacms/students',
+        resource_type: 'image'
+      });
+
+      uploadedImage = result;
+
+      image = {
+        profileImage: result.secure_url,
+        public_id: result.public_id
+      };
+    }
+
+    const student = await Student.findOneAndUpdate(
+      { studentId: studentOldInfo.studentId },
+      {
+        ...req.body,
+        image
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    // Delete old image only after successful database update
+    if (req.file && studentOldInfo.image?.public_id) {
+      await cloudinary.uploader.destroy(
+        studentOldInfo.image.public_id
+      );
+    }
+
+    return res.status(200).json({
+      message: 'Student updated successfully',
+      student
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    if (uploadedImage?.public_id) {
+      await cloudinary.uploader.destroy(uploadedImage.public_id)
+        .catch(console.error);
+    }
+
+    return res.status(500).json({
+      message: 'Server error unable to update student'
+    });
+
+  } finally {
+    if (req.file?.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
+  }
+});
+
+
+router.get('/student-result/:className', async(req, res)=>{
      try{
         const {className} = req.params
         const student = await Student.find({className})

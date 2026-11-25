@@ -2,30 +2,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Search,
-  Plus,
-  Users,
-  UserCheck,
-  UserX,
-  Eye,
-  Filter,
-  Trash,
-  Edit,
-} from "lucide-react";
+import {Search, Plus, Users, UserCheck, UserX, Eye, Filter, Trash, Edit,} from "lucide-react";
 import Navigation from "../component/navigation";
 import Header from "../component/header";
+import { useRouter } from "next/navigation";
 
 
 
 
 type Student = {
-  _id: number;
+  _id: string;
   fullname: string;
   admissionNo: string;
   className: string;
   gender: string;
   email: string;
+  image:{
+    prfileImage:string
+  }
   studentId: string;
   profileImage: File | null
   address:string,
@@ -46,6 +40,8 @@ export default function StudentsPage() {
   const [active, setActive] = useState("Students");
   const [loading, setLoading] = useState(false)
   const [profileUrl, setProfileUrl] = useState('')
+  const [showEdit, setShowEdit] = useState(false)
+  const [studentInfo, setStudentInfo] = useState<Student>()
   const [message, setMessage] = useState('')
   const [showBox, setShowBox] = useState(false)
     const [form, setForm] = useState<{
@@ -75,6 +71,7 @@ export default function StudentsPage() {
     profileImage: null
   });
 
+  const router = useRouter()
   useEffect(()=>{
     
     generateFourDigit()
@@ -101,6 +98,22 @@ export default function StudentsPage() {
     getStudent()
   }, [])
 
+async function handleDelete(_id:string){
+  try{
+    setLoading(true)
+    const result = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/student/${_id}`, {method:'delete'})
+    if(!result.ok){
+      setMessage('somehting went wrong try again')
+      return
+    }
+    setStudents(()=>students.filter(item=>item._id !== _id))
+  }catch(err){
+    console.log(err)
+    setMessage('something went wrong try again')
+  }finally{
+    setLoading(false)
+  }
+}
 
 function generateFourDigit(){
   let count = Number(localStorage.getItem('count') ||0)
@@ -201,6 +214,72 @@ function generateRandomValue() {
      generateFourDigit()
    }
   };
+
+const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  if (!studentInfo) return;
+
+  const formData = new FormData();
+
+  formData.append("fullname", studentInfo.fullname);
+  formData.append("admissionNo", studentInfo.admissionNo);
+  formData.append("className", studentInfo.className);
+  formData.append("gender", studentInfo.gender);
+  formData.append("email", studentInfo.email);
+  formData.append("studentId", studentInfo.studentId);
+  formData.append("guardianName", studentInfo.guardianName);
+  formData.append("guardianContact", studentInfo.guardianContact);
+  formData.append(
+    "guardianRelationshipStatus",
+    studentInfo.guardianRelationshipStatus
+  );
+  formData.append("address", studentInfo.address);
+
+  if (studentInfo.profileImage) {
+    formData.append("profileImage", studentInfo.profileImage);
+  }
+
+  try {
+    setLoading(true);
+
+    const result = await fetch(
+      `${process.env.NEXT_PUBLIC_URL}/api/student`,
+      {
+        method: "PATCH",
+        body: formData,
+        credentials: "include",
+      }
+    );
+
+    const { message, student } = await result.json();
+
+    if (!result.ok) {
+      setShowBox(true);
+      setMessage(message);
+      return;
+    }
+
+    // Replace the edited student instead of adding a duplicate.
+    setStudents((prev) =>
+      prev.map((item) =>
+        item.studentId === student.studentId ? student : item
+      )
+    );
+
+    setShowEdit(false);
+
+  } catch (err) {
+    console.log(err);
+    setMessage("Server error");
+    setShowBox(true);
+
+  } finally {
+    setLoading(false);
+    generateRandomValue();
+    generateFourDigit();
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#f7f8fc]">
@@ -386,7 +465,7 @@ function generateRandomValue() {
                           title="View student"
                           className="hover:text-indigo-600"
                           onClick={() =>
-                            alert(`Viewing ${student.fullname}`)
+                            router.push(`students/${student._id}`)
                           }
                         >
                           <Eye size={18} />
@@ -395,9 +474,10 @@ function generateRandomValue() {
                         <button
                           title="Edit student"
                           className="hover:text-indigo-600"
-                          onClick={() =>
-                            alert(`Editing ${student.fullname}`)
-                          }
+                          onClick={() =>{
+                            setShowEdit(true)
+                            setStudentInfo(student)
+                          }}
                         >
                           <Edit size={18} />
                         </button>
@@ -406,7 +486,9 @@ function generateRandomValue() {
                           title="More options"
                           className="hover:text-gray-700"
                         >
-                          <Trash className="text-red-500" size={19} />
+                          <Trash className="text-red-400 hover:text-red-800" size={19} 
+                            onClick={()=>handleDelete(student._id)}
+                            />
                         </button>
                       </div>
                     </td>
@@ -434,283 +516,558 @@ function generateRandomValue() {
         {/* Add Student Modal */}
         {showModal && (
           
-<div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
 
-  <div className="bg-white text-gray-700 rounded-2xl w-full max-w-lg shadow-2xl max-h-[95dvh] flex flex-col overflow-hidden">
+            <div className="bg-white text-gray-700 rounded-2xl w-full max-w-lg shadow-2xl max-h-[95dvh] flex flex-col overflow-hidden">
 
-    {/* Header */}
-    <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">
-          Register New Student
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Fill in the student&apos;s information below
-        </p>
-      </div>
+              {/* Header */}
+              <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Register New Student
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Fill in the student&apos;s information below
+                  </p>
+                </div>
 
-      <button
-        type="button"
-        onClick={() => setShowModal(false)}
-        className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
-      >
-        ✕
-      </button>
-    </div>
-
-    {/* Scrollable Form Content */}
-    <form onSubmit={addStudent} className="flex flex-col min-h-0 flex-1">
-
-      <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
-
-        {/* Student Information */}
-        <div>
-          <h3 className="text-sm font-semibold text-indigo-600 mb-3">
-            Student Information
-          </h3>
-
-          <div className="space-y-4">
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                required
-                value={form.fullname}
-                onChange={(e) =>
-                  setForm({ ...form, fullname: e.target.value })
-                }
-                placeholder="Enter full name"
-                className="w-full mt-2 p-3 border  text-gray-800  border-gray-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Admission Number
-              </label>
-              <input
-                required
-                value={form.admissionNo}
-                readOnly
-                placeholder="e.g. STU006"
-                className="w-full mt-2 p-3 border  text-gray-800 border-gray-200 rounded-xl bg-gray-50 outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Class
-                </label>
-                <select
-                  value={form.className}
-                  onChange={(e) =>
-                    setForm({ ...form, className: e.target.value })
-                  }
-                  className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
                 >
-                  {[
-                    'SS 3', 'SS 2', 'SS 1',
-                    'JSS 3', 'JSS 2', 'JSS 1',
-                    'BASIC 6', 'BASIC 5', 'BASIC 4',
-                    'BASIC 3', 'BASIC 2', 'BASIC 1',
-                    'NURSERY 3', 'NURSERY 2',
-                    'NURSERY 1', 'PRE NURSERY'
-                  ].map((item, i) => (
-                    <option key={i} value={item}>{item}</option>
-                  ))}
-                </select>
+                  ✕
+                </button>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Gender
-                </label>
-                <select
-                  value={form.gender}
-                  onChange={(e) =>
-                    setForm({ ...form, gender: e.target.value })
-                  }
-                  className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
+              {/* Scrollable Form Content */}
+              <form onSubmit={addStudent} className="flex flex-col min-h-0 flex-1">
+
+                <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+
+                  {/* Student Information */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-indigo-600 mb-3">
+                      Student Information
+                    </h3>
+
+                    <div className="space-y-4">
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Full Name
+                        </label>
+                        <input
+                          required
+                          value={form.fullname}
+                          onChange={(e) =>
+                            setForm({ ...form, fullname: e.target.value })
+                          }
+                          placeholder="Enter full name"
+                          className="w-full mt-2 p-3 border  text-gray-800  border-gray-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Admission Number
+                        </label>
+                        <input
+                          required
+                          value={form.admissionNo}
+                          readOnly
+                          placeholder="e.g. STU006"
+                          className="w-full mt-2 p-3 border  text-gray-800 border-gray-200 rounded-xl bg-gray-50 outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Class
+                          </label>
+                          <select
+                            value={form.className}
+                            onChange={(e) =>
+                              setForm({ ...form, className: e.target.value })
+                            }
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
+                          >
+                            {[
+                              'SS 3', 'SS 2', 'SS 1',
+                              'JSS 3', 'JSS 2', 'JSS 1',
+                              'BASIC 6', 'BASIC 5', 'BASIC 4',
+                              'BASIC 3', 'BASIC 2', 'BASIC 1',
+                              'NURSERY 3', 'NURSERY 2',
+                              'NURSERY 1', 'PRE NURSERY'
+                            ].map((item, i) => (
+                              <option key={i} value={item}>{item}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Gender
+                          </label>
+                          <select
+                            value={form.gender}
+                            onChange={(e) =>
+                              setForm({ ...form, gender: e.target.value })
+                            }
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
+                          >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                          </select>
+                        </div>
+
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Student ID
+                        </label>
+                        <input
+                          type="text"
+                          value={form.studentId}
+                          readOnly
+                          className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Guardian Information */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-indigo-600 mb-3">
+                      Guardian Information
+                    </h3>
+
+                    <div className="space-y-4">
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Guardian Name
+                        </label>
+                        <input
+                          type="text"
+                          value={form.guardianName}
+                          placeholder="Enter guardian's full name"
+                          onChange={(e) =>
+                            setForm({ ...form, guardianName: e.target.value })
+                          }
+                          className="w-full  text-gray-800 mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Relationship
+                          </label>
+                          <select
+                            value={form.guardianRelationshipStatus}
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                guardianRelationshipStatus: e.target.value
+                              })
+                            }
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
+                          >
+                            <option value="Parent">Parent</option>
+                            <option value="Relation">Relation</option>
+                            <option value="Guardian">Guardian</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={form.guardianContact}
+                            placeholder="Phone number"
+                            onChange={(e) =>
+                              setForm({ ...form, guardianContact: e.target.value })
+                            }
+                            className="w-full mt-2 p-3  text-gray-800 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
+                          />
+                        </div>
+
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Address
+                        </label>
+                        <input
+                          type="text"
+                          value={form.address}
+                          onChange={(e) =>
+                            setForm({ ...form, address: e.target.value })
+                          }
+                          placeholder="Enter home address"
+                          className="w-full mt-2 p-3 border  text-gray-800 border-gray-200 rounded-xl outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Profile Photo */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-indigo-600 mb-3">
+                      Student Profile Photo
+                    </h3>
+
+                    <div className="flex items-center gap-4">
+
+                      {profileUrl ? (
+                        <img
+                          src={profileUrl}
+                          alt="Student profile"
+                          className="w-16 h-16 rounded-xl object-cover border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">
+                          👤
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null;
+
+                            setForm({ ...form, profileImage: file });
+
+                            if (file) {
+                              setProfileUrl(URL.createObjectURL(file));
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-600 file:font-medium"
+                        />
+                        <p className="text-xs text-gray-400 mt-2">
+                          Upload a clear student photograph (JPG or PNG).
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Sticky Footer */}
+                <div className="px-5 sm:px-6 py-4 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0">
+
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium transition"
+                  >
+                    {loading ? "Adding..." : "Add Student"}
+                  </button>
+
+                </div>
+
+              </form>
 
             </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Student ID
-              </label>
-              <input
-                type="text"
-                value={form.studentId}
-                readOnly
-                className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
-              />
-            </div>
-
           </div>
-        </div>
-
-        {/* Guardian Information */}
-        <div className="pt-4 border-t border-gray-100">
-          <h3 className="text-sm font-semibold text-indigo-600 mb-3">
-            Guardian Information
-          </h3>
-
-          <div className="space-y-4">
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Guardian Name
-              </label>
-              <input
-                type="text"
-                value={form.guardianName}
-                placeholder="Enter guardian's full name"
-                onChange={(e) =>
-                  setForm({ ...form, guardianName: e.target.value })
-                }
-                className="w-full  text-gray-800 mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Relationship
-                </label>
-                <select
-                  value={form.guardianRelationshipStatus}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      guardianRelationshipStatus: e.target.value
-                    })
-                  }
-                  className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
-                >
-                  <option value="Parent">Parent</option>
-                  <option value="Relation">Relation</option>
-                  <option value="Guardian">Guardian</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={form.guardianContact}
-                  placeholder="Phone number"
-                  onChange={(e) =>
-                    setForm({ ...form, guardianContact: e.target.value })
-                  }
-                  className="w-full mt-2 p-3  text-gray-800 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
-                />
-              </div>
-
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Address
-              </label>
-              <input
-                type="text"
-                value={form.address}
-                onChange={(e) =>
-                  setForm({ ...form, address: e.target.value })
-                }
-                placeholder="Enter home address"
-                className="w-full mt-2 p-3 border  text-gray-800 border-gray-200 rounded-xl outline-none focus:border-indigo-500"
-              />
-            </div>
-
-          </div>
-        </div>
-
-        {/* Profile Photo */}
-        <div className="pt-4 border-t border-gray-100">
-          <h3 className="text-sm font-semibold text-indigo-600 mb-3">
-            Student Profile Photo
-          </h3>
-
-          <div className="flex items-center gap-4">
-
-            {profileUrl ? (
-              <img
-                src={profileUrl}
-                alt="Student profile"
-                className="w-16 h-16 rounded-xl object-cover border border-gray-200"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">
-                👤
-              </div>
-            )}
-
-            <div className="flex-1 min-w-0">
-              <input
-                type="file"
-                accept="image/png, image/jpeg, image/jpg"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null;
-
-                  setForm({ ...form, profileImage: file });
-
-                  if (file) {
-                    setProfileUrl(URL.createObjectURL(file));
-                  }
-                }}
-                className="w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-600 file:font-medium"
-              />
-              <p className="text-xs text-gray-400 mt-2">
-                Upload a clear student photograph (JPG or PNG).
-              </p>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-
-      {/* Sticky Footer */}
-      <div className="px-5 sm:px-6 py-4 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0">
-
-        <button
-          type="button"
-          onClick={() => setShowModal(false)}
-          className="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium transition"
-        >
-          {loading ? "Adding..." : "Add Student"}
-        </button>
-
-      </div>
-
-    </form>
-
-  </div>
-</div>
 
         )}
+        {showEdit && studentInfo &&(
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
 
+            <div className="bg-white text-gray-700 rounded-2xl w-full max-w-lg shadow-2xl max-h-[95dvh] flex flex-col overflow-hidden">
+
+              {/* Header */}
+              <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Edit Student Information
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Correct student&apos;s information below
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowEdit(false)}
+                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Scrollable Form Content */}
+              <form onSubmit={handleEdit} className="flex flex-col min-h-0 flex-1">
+
+                <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+
+                  {/* Student Information */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-indigo-600 mb-3">
+                      Student Information
+                    </h3>
+
+                    <div className="space-y-4">
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Full Name
+                        </label>
+                        <input
+                          required
+                          value={studentInfo.fullname}
+                          onChange={(e) =>
+                            setStudentInfo({ ...studentInfo, fullname: e.target.value })
+                          }
+                          placeholder="Enter full name"
+                          className="w-full mt-2 p-3 border  text-gray-800  border-gray-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Admission Number
+                        </label>
+                        <input
+                          required
+                          value={studentInfo.admissionNo}
+                          readOnly
+                          placeholder="e.g. STU006"
+                          className="w-full mt-2 p-3 border  text-gray-800 border-gray-200 rounded-xl bg-gray-50 outline-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Class
+                          </label>
+                          <select
+                            value={studentInfo.className}
+                            onChange={(e) =>
+                              setStudentInfo({ ...studentInfo, className: e.target.value })
+                            }
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
+                          >
+                            {[
+                              'SS 3', 'SS 2', 'SS 1',
+                              'JSS 3', 'JSS 2', 'JSS 1',
+                              'BASIC 6', 'BASIC 5', 'BASIC 4',
+                              'BASIC 3', 'BASIC 2', 'BASIC 1',
+                              'NURSERY 3', 'NURSERY 2',
+                              'NURSERY 1', 'PRE NURSERY'
+                            ].map((item, i) => (
+                              <option key={i} value={item}>{item}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Gender
+                          </label>
+                          <select
+                            value={studentInfo.gender}
+                            onChange={(e) =>
+                              setStudentInfo({ ...studentInfo, gender: e.target.value })
+                            }
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
+                          >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                          </select>
+                        </div>
+
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Student ID
+                        </label>
+                        <input
+                          type="text"
+                          value={studentInfo.studentId}
+                          readOnly
+                          className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Guardian Information */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-indigo-600 mb-3">
+                      Guardian Information
+                    </h3>
+
+                    <div className="space-y-4">
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Guardian Name
+                        </label>
+                        <input
+                          type="text"
+                          value={studentInfo.guardianName}
+                          placeholder="Enter guardian's full name"
+                          onChange={(e) =>
+                            setStudentInfo({ ...studentInfo, guardianName: e.target.value })
+                          }
+                          className="w-full  text-gray-800 mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Relationship
+                          </label>
+                          <select
+                            value={studentInfo.guardianRelationshipStatus}
+                            onChange={(e) =>
+                              setStudentInfo({
+                                ...studentInfo,
+                                guardianRelationshipStatus: e.target.value
+                              })
+                            }
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl outline-none focus:border-indigo-500 bg-white"
+                          >
+                            <option value="Parent">Parent</option>
+                            <option value="Relation">Relation</option>
+                            <option value="Guardian">Guardian</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={studentInfo.guardianContact}
+                            placeholder="Phone number"
+                            onChange={(e) =>
+                              setStudentInfo({ ...studentInfo, guardianContact: e.target.value })
+                            }
+                            className="w-full mt-2 p-3  text-gray-800 border border-gray-200 rounded-xl outline-none focus:border-indigo-500"
+                          />
+                        </div>
+
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Address
+                        </label>
+                        <input
+                          type="text"
+                          value={studentInfo.address}
+                          onChange={(e) =>
+                            setStudentInfo({ ...studentInfo, address: e.target.value })
+                          }
+                          placeholder="Enter home address"
+                          className="w-full mt-2 p-3 border  text-gray-800 border-gray-200 rounded-xl outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Profile Photo */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-indigo-600 mb-3">
+                      Student Profile Photo
+                    </h3>
+
+                    <div className="flex items-center gap-4">
+
+                      {profileUrl ? (
+                        <img
+                          src={profileUrl ? profileUrl : studentInfo?.image?.prfileImage}
+                          alt="Student profile"
+                          className="w-16 h-16 rounded-xl object-cover border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">
+                          👤
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null;
+
+                            setStudentInfo({ ...studentInfo, profileImage: file });
+
+                            if (file) {
+                              setProfileUrl(URL.createObjectURL(file));
+                            }
+                          }}
+                          className="w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-600 file:font-medium"
+                        />
+                        <p className="text-xs text-gray-400 mt-2">
+                          Upload a clear student photograph (JPG or PNG).
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Sticky Footer */}
+                <div className="px-5 sm:px-6 py-4 border-t border-gray-100 bg-white flex justify-end gap-3 shrink-0">
+
+                  <button
+                    type="button"
+                    onClick={() => setShowEdit(false)}
+                    className="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium transition"
+                  >
+                    {loading ? "Saving..." : "Save Change"}
+                  </button>
+
+                </div>
+
+              </form>
+
+            </div>
+          </div>
+        )}
         </div>
       </div>
     </div>
