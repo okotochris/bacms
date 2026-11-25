@@ -687,14 +687,14 @@ export default function ResultsPage() {
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search student..."
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-indigo-500"
+                      className="w-full pl-10 pr-4 py-3  text-black bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-indigo-500"
                     />
                   </div>
 
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none bg-white"
+                    className="border border-gray-200 text-gray-800 rounded-xl px-3 py-3 text-sm outline-none bg-white"
                   >
                     <option value="All">All Status</option>
                     <option value="Pending">Pending</option>
@@ -1069,7 +1069,7 @@ function AddResultModal({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or ID..."
-            className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-indigo-500"
+            className="w-full pl-9 pr-4 py-2.5  text-black bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-indigo-500"
           />
         </div>
 
@@ -1129,7 +1129,7 @@ function AddResultModal({
 
           {locked && (
             <p className="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-              This student's results are already published and can't be
+              This student&apos;s results are already published and can&apos;t be
               changed.
             </p>
           )}
@@ -1340,7 +1340,7 @@ function PublishModal({
       )}
 
       <div className="overflow-x-auto border border-gray-100 rounded-xl">
-        <table className="w-full min-w-[900px] text-left text-sm">
+        <table className="w-full min-w-225 text-left text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
               <th className="px-4 py-3">Student</th>
@@ -1351,7 +1351,7 @@ function PublishModal({
               <th className="px-4 py-3">Position</th>
               <th className="px-4 py-3">Present</th>
               <th className="px-4 py-3">Absent</th>
-              <th className="px-4 py-3">Class teacher's remark</th>
+              <th className="px-4 py-3">Class teacher&apos;s remark</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -1394,7 +1394,7 @@ function PublishModal({
                         setExtra(l.doc._id, "remark", ev.target.value)
                       }
                       placeholder="e.g. A diligent student"
-                      className="w-56 p-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500"
+                      className="w-56 p-2 text-sm border  text-black border-gray-200 rounded-lg outline-none focus:border-indigo-500"
                     />
                   </td>
                 </tr>
@@ -1540,7 +1540,7 @@ function NumberField({
         onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 3))}
         placeholder={`0-${max}`}
         aria-invalid={invalid}
-        className={`w-full p-3 border rounded-xl text-sm outline-none disabled:bg-gray-100 ${
+        className={`w-full p-3 border text-black rounded-xl text-sm outline-none disabled:bg-gray-100 ${
           invalid
             ? "border-red-400 bg-red-50"
             : "border-gray-200 focus:border-indigo-500"
@@ -1565,7 +1565,7 @@ function MiniInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="0"
-      className="w-16 p-2 text-sm text-center border border-gray-200 rounded-lg outline-none focus:border-indigo-500"
+      className="w-16 p-2 text-sm text-center  text-black border border-gray-200 rounded-lg outline-none focus:border-indigo-500"
     />
   );
 }
@@ -1589,7 +1589,7 @@ function ScoreInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={`0-${max}`}
       aria-invalid={invalid}
-      className={`w-20 p-2 text-sm text-center border rounded-lg outline-none ${
+      className={`w-20 p-2 text-sm  text-black text-center border rounded-lg outline-none ${
         invalid
           ? "border-red-400 bg-red-50 focus:border-red-500"
           : "border-gray-200 focus:border-indigo-500"
@@ -1644,7 +1644,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full p-3 border border-gray-200 rounded-xl bg-white text-sm outline-none focus:border-indigo-500"
+        className="w-full p-3 border text-gray-800 border-gray-200 rounded-xl bg-white text-sm outline-none focus:border-indigo-500"
       >
         {placeholder && (
           <option value="" disabled>

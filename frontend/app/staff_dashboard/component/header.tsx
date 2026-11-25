@@ -26,7 +26,7 @@ export default function Header({ active, setSidebarOpen }: { active: string; set
                 placeholder="Search anything..."
                 className="w-36 bg-transparent text-xs outline-none placeholder:text-slate-400"
               />
-              <span className="rounded bg-white px-1.5 py-0.5 text-[10px] text-slate-400">⌘ K</span>
+              <span className=" text-gray-800 bg-white px-1.5 py-0.5 text-[10px] ">⌘ K</span>
             </div>
             <button className="relative rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-slate-50">
               <Bell size={18} />

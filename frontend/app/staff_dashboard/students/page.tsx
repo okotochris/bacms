@@ -101,9 +101,11 @@ export default function StudentsPage() {
     getStudent()
   }, [])
 
-   
+let count = Number(localStorage.getItem('count') ||0)
 function generateFourDigit(){
-  const digit = 'STU' + Math.floor(Math.random() * 10000)
+  count++
+  localStorage.setItem("count", String(count))
+  const digit = 'STU' + '-' + String(count).padStart(10, '0')
   setForm({...form, admissionNo:digit})
 }
 
@@ -150,6 +152,10 @@ function generateRandomValue() {
       formData.append("gender", form.gender);
       formData.append("email", form.email);
       formData.append("studentId", form.studentId);
+      formData.append('guardianName', form.guardianName)
+      formData.append('guardianContact', form.guardianContact)
+      formData.append('guardianguardianRelationshipStatus', form.guardianRelationshipStatus)
+       formData.append('address', form.address)
       if (form.profileImage) {
         formData.append("profileImage", form.profileImage);
       }

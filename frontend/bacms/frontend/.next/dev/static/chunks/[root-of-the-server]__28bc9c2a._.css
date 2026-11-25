@@ -1288,6 +1288,10 @@
     min-width: calc(var(--spacing) * 0);
   }
 
+  .min-w-225 {
+    min-width: calc(var(--spacing) * 225);
+  }
+
   .min-w-\[190px\] {
     min-width: 190px;
   }
