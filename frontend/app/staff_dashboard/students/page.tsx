@@ -101,8 +101,9 @@ export default function StudentsPage() {
     getStudent()
   }, [])
 
-let count = Number(localStorage.getItem('count') ||0)
+
 function generateFourDigit(){
+  let count = Number(localStorage.getItem('count') ||0)
   count++
   localStorage.setItem("count", String(count))
   const digit = 'STU' + '-' + String(count).padStart(10, '0')
