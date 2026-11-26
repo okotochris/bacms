@@ -48,6 +48,7 @@ const studentSchema = new mongoose.Schema(
     guardianContact: String,
     guardianRelationshipStatus: String,
     address:String,
+    dob:String,
 
   },
   { timestamps: true },

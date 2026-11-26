@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Wallet,
-  GraduationCap,
-  UserCheck,
-  UserPlus,
-  CheckCircle2,
-  AlertCircle,
-  ShieldCheck,
-  History,
-} from "lucide-react";
+import {Wallet, GraduationCap, UserCheck,UserPlus, CheckCircle2, AlertCircle, ShieldCheck, History,} from "lucide-react";
 import Navigation from "../component/navigation";
 import Header from "../component/header";
 
@@ -204,7 +195,7 @@ export default function Fees() {
           const data = await res.json();
           if (Array.isArray(data.payments)) {
             setPayments(
-              data.payments.map((p: any) => ({
+              data.payments.map((p: anyPayment) => ({
                 reference: String(p.reference || p._id || ""),
                 amount: Number(p.amount || 0),
                 date: p.date || p.createdAt || p.paidAt || "",

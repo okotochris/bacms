@@ -26,6 +26,7 @@ type Student = {
   guardianName:string,
   guardianContact:string,
   guardianRelationshipStatus:string,
+  dob:string
   status: "Active" | "Inactive";
 };
 
@@ -55,6 +56,7 @@ export default function StudentsPage() {
       guardianContact:string;
       guardianRelationshipStatus:string;
       address:string;
+      dob:string;
       profileImage: File | null;
     }>({
     fullname: "",
@@ -67,7 +69,7 @@ export default function StudentsPage() {
     guardianContact:'',
     guardianRelationshipStatus:'',
     address:'',
-
+    dob:"",
     profileImage: null
   });
 
@@ -168,6 +170,7 @@ function generateRandomValue() {
       formData.append("studentId", form.studentId);
       formData.append('guardianName', form.guardianName)
       formData.append('guardianContact', form.guardianContact)
+       formData.append('dob', form.dob)
       formData.append('guardianguardianRelationshipStatus', form.guardianRelationshipStatus)
        formData.append('address', form.address)
       if (form.profileImage) {
@@ -201,6 +204,7 @@ function generateRandomValue() {
       guardianContact:'',
       guardianRelationshipStatus:'',
       address:'',
+      dob:''
     });
 
     setShowModal(false);
@@ -230,6 +234,7 @@ const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
   formData.append("studentId", studentInfo.studentId);
   formData.append("guardianName", studentInfo.guardianName);
   formData.append("guardianContact", studentInfo.guardianContact);
+  formData.append("dob", studentInfo.dob);
   formData.append(
     "guardianRelationshipStatus",
     studentInfo.guardianRelationshipStatus
@@ -624,17 +629,31 @@ const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
                         </div>
 
                       </div>
-
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">
-                          Student ID
-                        </label>
-                        <input
-                          type="text"
-                          value={form.studentId}
-                          readOnly
-                          className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Date of Birth
+                          </label>
+                          <input
+                            type="date"
+                            value={form.dob}
+                            onChange={(e)=>setForm({...form, dob:e.target.value})}
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
+                          />
+                          
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Student ID
+                          </label>
+                          <input
+                            type="text"
+                            value={form.studentId}
+                            readOnly
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
+                          />
+                          
+                        </div>
                       </div>
 
                     </div>
@@ -902,16 +921,31 @@ const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
 
                       </div>
 
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">
-                          Student ID
-                        </label>
-                        <input
-                          type="text"
-                          value={studentInfo.studentId}
-                          readOnly
-                          className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
-                        />
+                       <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Date of Birth
+                          </label>
+                          <input
+                            type="date"
+                            value={studentInfo.dob}
+                            onChange={(e)=>setForm({...studentInfo, dob:e.target.value})}
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
+                          />
+                          
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">
+                            Student ID
+                          </label>
+                          <input
+                            type="text"
+                            value={studentInfo.studentId}
+                            readOnly
+                            className="w-full mt-2 p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none"
+                          />
+                          
+                        </div>
                       </div>
 
                     </div>
